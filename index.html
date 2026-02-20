@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>عطور الخبير - الكويت | أرقى العطور الشرقية</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo">عطور <span>الخبير - الكويت</span></a>
+<!-- في قسم header، بعد آخر عنصر في القائمة -->
+<nav>
+  <a href="index.html" class="active">الرئيسية</a>
+  <a href="products.html">المنتجات</a>
+  <a href="products.html?cat=نسائي">نسائي</a>
+  <a href="products.html?cat=رجالي">رجالي</a>
+  <a href="products.html?cat=يونيسكس">يونيسكس</a>
+  <a href="admin.html" class="admin-link" title="تسجيل الدخول للإدارة">🔐</a> <!-- أضف هذا السطر -->
+</nav>
+    <div class="header-actions">
+      <a href="cart.html" class="btn-cart">
+        🛒 السلة
+        <span class="cart-badge cart-count" style="display:none">0</span>
+      </a>
+    </div>
+    <button class="burger" aria-label="القائمة">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu">
+  <a href="index.html">🏠 الرئيسية</a>
+  <a href="products.html">🌹 المنتجات</a>
+  <a href="products.html?cat=نسائي">👩 نسائي</a>
+  <a href="products.html?cat=رجالي">👨 رجالي</a>
+  <a href="products.html?cat=يونيسكس">✨ يونيسكس</a>
+  <a href="cart.html">🛒 السلة</a>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-pattern"></div>
+  <div class="hero-content container">
+    <div class="hero-text">
+      <div class="hero-label">🇰🇼 مجموعة 2025 - الكويت</div>
+      <h1 class="hero-title">
+        الأناقة
+        <em>بلا حدود</em>
+      </h1>
+      <p class="hero-desc">اكتشف عالماً من العطور الشرقية الفاخرة في الكويت، كل عطر قصة تنبع من روح الشرق وتحكيها ببراعة حرفية استثنائية.</p>
+      <div class="hero-actions">
+        <a href="products.html" class="btn-primary">🛍️ تسوق الآن</a>
+        <a href="products.html?cat=عود" class="btn-outline">عطور العود</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-img-container">
+        <img src="https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?w=700&h=800&fit=crop" alt="عطور فاخرة">
+        <div class="hero-img-frame"></div>
+        <div class="hero-img-glow"></div>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-item">
+          <span class="stat-value">+200</span>
+          <span class="stat-label">عطر فاخر</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">15K</span>
+          <span class="stat-label">عميل سعيد</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">5★</span>
+          <span class="stat-label">تقييمنا</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<div class="features-section">
+  <div class="container">
+    <div class="features-grid">
+      <div class="feature-item">
+        <div class="feature-icon">📦</div>
+        <div class="feature-text">
+          <h4>دفع عند الاستلام</h4>
+          <p>لا تدفع إلا بعد استلام طلبك بأمان تام في الكويت</p>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🚚</div>
+        <div class="feature-text">
+          <h4>توصيل سريع</h4>
+          <p>خلال 1-3 أيام عمل لجميع محافظات الكويت</p>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">✅</div>
+        <div class="feature-text">
+          <h4>منتجات أصلية</h4>
+          <p>ضمان 100% على أصالة جميع عطورنا</p>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🔄</div>
+        <div class="feature-text">
+          <h4>إرجاع مجاني</h4>
+          <p>إرجاع مجاني خلال 7 أيام من الاستلام</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CATEGORIES -->
+<section>
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="section-label">تسوق حسب الفئة</div>
+      <h2 class="section-title">اكتشف تشكيلتنا</h2>
+    </div>
+    <div class="categories-grid" id="categories-grid"></div>
+  </div>
+</section>
+
+<!-- FEATURED PRODUCTS -->
+<section style="background:var(--dark);border-top:1px solid var(--border-subtle);">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="section-label">الأكثر طلباً في الكويت</div>
+      <h2 class="section-title">عطور مختارة بعناية</h2>
+      <p class="section-subtitle">تشكيلة مميزة من أرقى العطور الشرقية والغربية</p>
+    </div>
+    <div class="products-grid" id="featured-grid"></div>
+    <div style="text-align:center;margin-top:48px">
+      <a href="products.html" class="btn-primary">عرض جميع المنتجات →</a>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials-section">
+  <div class="container">
+    <div class="section-header fade-in">
+      <div class="section-label">آراء عملائنا في الكويت</div>
+      <h2 class="section-title">يتحدثون عنّا</h2>
+    </div>
+    <div class="testimonials-grid">
+      <div class="testimonial-card fade-in">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">"عود الملوك عطر استثنائي لا يشبهه شيء. يدوم طويلاً ويترك أثراً لا يُنسى أينما ذهبت في الكويت."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">🇰🇼</div>
+          <div>
+            <div class="author-name">محمد العتيبي</div>
+            <div class="author-title">مدينة الكويت</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card fade-in">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">"روز نوار أحلى عطر تسوقت منه في حياتي. الرائحة فاخرة وتدوم من الصباح حتى المساء."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">👩</div>
+          <div>
+            <div class="author-name">فاطمة الزهراني</div>
+            <div class="author-title">السالمية</div>
+          </div>
+        </div>
+      </div>
+      <div class="testimonial-card fade-in">
+        <div class="stars">★★★★★</div>
+        <p class="testimonial-text">"خدمة ممتازة وسرعة في التوصيل. طلبت نسمة الفجر وحصلت على مدح كثير من زملائي."</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">👤</div>
+          <div>
+            <div class="author-name">خالد الدوسري</div>
+            <div class="author-title">الأحمدي</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- NEWSLETTER -->
+<section class="newsletter-section">
+  <div class="container">
+    <div class="newsletter-inner">
+      <div>
+        <div class="section-label">اشترك الآن</div>
+        <h2 class="newsletter-title">احصل على أحدث<br><span style="color:var(--orange)">عروضنا وعطورنا في الكويت</span></h2>
+        <p style="color:var(--text-muted);font-size:14px;margin-top:8px">سنرسل لك العروض الحصرية فقط، بدون إزعاج 🇰🇼🌹</p>
+      </div>
+      <div>
+        <div class="newsletter-form" style="margin-bottom:12px">
+          <input type="email" class="newsletter-input" placeholder="بريدك الإلكتروني" dir="rtl">
+          <button class="btn-primary" onclick="subscribeNewsletter(this)">اشتراك</button>
+        </div>
+        <p style="font-size:12px;color:var(--text-muted)">بالاشتراك، أنت توافق على سياسة الخصوصية</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <a href="index.html" class="footer-logo">عطور <span>الخبير - الكويت</span></a>
+        <p class="footer-desc">نقدم لكم أفخر وأرقى العطور الشرقية والعالمية في الكويت بضمان الجودة والأصالة. تجربة تسوق استثنائية مع دفع عند الاستلام.</p>
+        <div class="social-links">
+          <a href="#" class="social-link">📘</a>
+          <a href="#" class="social-link">📸</a>
+          <a href="#" class="social-link">🐦</a>
+          <a href="#" class="social-link">📱</a>
+        </div>
+      </div>
+      <div>
+        <h4 class="footer-heading">تسوق</h4>
+        <ul class="footer-links">
+          <li><a href="products.html">جميع المنتجات</a></li>
+          <li><a href="products.html?cat=نسائي">عطور نسائية</a></li>
+          <li><a href="products.html?cat=رجالي">عطور رجالية</a></li>
+          <li><a href="products.html?cat=يونيسكس">يونيسكس</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="footer-heading">خدماتنا</h4>
+        <ul class="footer-links">
+          <li><a href="#">الدفع عند الاستلام</a></li>
+          <li><a href="#">سياسة الإرجاع</a></li>
+          <li><a href="#">تتبع الطلب</a></li>
+          <li><a href="#">اتصل بنا</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="footer-heading">تواصل معنا</h4>
+        <ul class="footer-links">
+          <li><a href="tel:+96550000000">📞 +965 50000000</a></li>
+          <li><a href="mailto:info@perfume.kw">📧 info@perfume.kw</a></li>
+          <li><a href="#">📍 مدينة الكويت، الكويت</a></li>
+          <li><a href="#">⏰ 9ص - 11م يومياً</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2025 عطور الخبير - الكويت. جميع الحقوق محفوظة.</p>
+      <p class="footer-copy" style="color:var(--orange)">💳 الدفع عند الاستلام فقط - الكويت 🇰🇼</p>
+    </div>
+  </div>
+</footer>
+
+<!-- CHAT WIDGET -->
+<div class="chat-widget">
+  <button class="chat-btn" aria-label="تحدث معنا">
+    💬
+    <span class="pulse"></span>
+  </button>
+  <div class="chat-box">
+    <div class="chat-header">
+      <div class="chat-avatar">💬</div>
+      <div>
+        <div class="chat-name">مساعد عطور الخبير - الكويت</div>
+        <div class="chat-status">متصل الآن</div>
+      </div>
+      <button class="chat-close">×</button>
+    </div>
+    <div class="chat-messages"></div>
+    <div class="chat-input-area">
+      <input type="text" class="chat-input" placeholder="اسألني عن أي عطر..." dir="rtl">
+      <button class="chat-send">➤</button>
+    </div>
+  </div>
+</div>
+
+<script src="main.js"></script>
+<script>
+// Render categories
+const catsGrid = document.getElementById('categories-grid');
+if (catsGrid) {
+  catsGrid.innerHTML = CATEGORIES.map(cat => `
+    <div class="cat-card fade-in" onclick="window.location.href='products.html?cat=${cat.name}'">
+      <img src="${cat.img}" alt="${cat.name}" loading="lazy">
+      <div class="cat-overlay">
+        <div class="cat-name">${cat.name}</div>
+        <div class="cat-count">${cat.count} عطر</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Render featured products
+const featuredGrid = document.getElementById('featured-grid');
+if (featuredGrid) {
+  const featured = PRODUCTS.filter(p => p.featured).slice(0, 4);
+  featuredGrid.innerHTML = featured.map(createProductCard).join('');
+  setTimeout(initFadeIn, 100);
+}
+
+function subscribeNewsletter(btn) {
+  const input = btn.previousElementSibling;
+  if (!input.value || !input.value.includes('@')) {
+    showToast('يرجى إدخال بريد إلكتروني صحيح', 'error');
+    return;
+  }
+  showToast('شكراً للاشتراك! ستصلك عروضنا قريباً في الكويت 🇰🇼🌹', 'success');
+  input.value = '';
+}
+</script>
+</body>
+</html>

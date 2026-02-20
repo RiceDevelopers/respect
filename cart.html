@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>سلة التسوق - عطور الخبير - الكويت</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo">عطور <span>الخبير - الكويت</span></a>
+    <nav>
+      <a href="index.html">الرئيسية</a>
+      <a href="products.html">المنتجات</a>
+      <a href="products.html?cat=نسائي">نسائي</a>
+      <a href="products.html?cat=رجالي">رجالي</a>
+    </nav>
+    <div class="header-actions">
+      <a href="cart.html" class="btn-cart" style="border-color:var(--orange);color:var(--orange)">
+        🛒 السلة
+        <span class="cart-badge cart-count" style="display:none">0</span>
+      </a>
+    </div>
+    <button class="burger"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<div class="mobile-menu">
+  <a href="index.html">🏠 الرئيسية</a>
+  <a href="products.html">🌹 المنتجات</a>
+  <a href="cart.html">🛒 السلة</a>
+</div>
+
+<div class="page-header">
+  <div class="container">
+    <div class="section-label">تسوق</div>
+    <h1>سلة <em style="font-style:italic;color:var(--orange)">التسوق</em> 🇰🇼</h1>
+    <p id="cart-count-text">جاري التحميل...</p>
+  </div>
+</div>
+
+<section>
+  <div class="container">
+    <div id="empty-cart" style="display:none;text-align:center;padding:100px 0">
+      <div style="font-size:64px;margin-bottom:24px">🛒</div>
+      <h3 style="font-family:'Cormorant Garamond',serif;font-size:32px;margin-bottom:12px">سلتك فارغة</h3>
+      <p style="color:var(--text-muted);margin-bottom:32px">اكتشف تشكيلتنا من العطور الفاخرة في الكويت</p>
+      <a href="products.html" class="btn-primary">تسوق الآن 🌹</a>
+    </div>
+    
+    <div class="cart-layout" id="cart-layout">
+      <div id="cart-items"></div>
+      <div class="cart-summary" id="cart-summary">
+        <h3 class="summary-title">ملخص الطلب</h3>
+        <div class="summary-row">
+          <span>المجموع الفرعي</span>
+          <span id="subtotal">0 د.ك</span>
+        </div>
+        <div class="summary-row">
+          <span>الشحن</span>
+          <span id="shipping-cost">مجاني</span>
+        </div>
+        <div class="summary-row">
+          <span>الضريبة (0%)</span>
+          <span id="tax-cost">0 د.ك</span>
+        </div>
+        <div class="summary-row total">
+          <span>الإجمالي</span>
+          <span id="total-cost">0 د.ك</span>
+        </div>
+        
+        <div class="cod-notice">
+          <div class="cod-icon">📦</div>
+          <div>
+            <strong style="color:var(--orange);display:block;margin-bottom:4px">الدفع عند الاستلام</strong>
+            لا تدفع إلا عند استلام طلبك! شحن مجاني للطلبات فوق 40 د.ك
+          </div>
+        </div>
+        
+        <a href="checkout.html" class="btn-primary" style="display:block;text-align:center;width:100%;margin-bottom:12px">
+          المتابعة للدفع →
+        </a>
+        <a href="products.html" class="btn-outline" style="display:block;text-align:center;width:100%">
+          ← متابعة التسوق
+        </a>
+        
+        <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border-subtle)">
+          <p style="font-size:12px;color:var(--text-muted);text-align:center">
+            🔒 شراء آمن ومشفور | ✅ منتجات أصلية مضمونة في الكويت
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-bottom">
+      <p class="footer-copy">© 2025 عطور الخبير - الكويت.</p>
+      <p class="footer-copy" style="color:var(--orange)">💳 الدفع عند الاستلام فقط - الكويت</p>
+    </div>
+  </div>
+</footer>
+
+<div class="chat-widget">
+  <button class="chat-btn" aria-label="تحدث معنا">🌹<span class="pulse"></span></button>
+  <div class="chat-box">
+    <div class="chat-header">
+      <div class="chat-avatar">🇰🇼</div>
+      <div><div class="chat-name">مساعد عطور الخبير - الكويت</div><div class="chat-status">متصل الآن</div></div>
+      <button class="chat-close">×</button>
+    </div>
+    <div class="chat-messages"></div>
+    <div class="chat-input-area">
+      <input type="text" class="chat-input" placeholder="هل تحتاج مساعدة؟" dir="rtl">
+      <button class="chat-send">➤</button>
+    </div>
+  </div>
+</div>
+
+<script src="main.js"></script>
+<script>
+function renderCart() {
+  const itemsEl = document.getElementById('cart-items');
+  const emptyEl = document.getElementById('empty-cart');
+  const layoutEl = document.getElementById('cart-layout');
+  const countText = document.getElementById('cart-count-text');
+  
+  if (!cart.length) {
+    emptyEl.style.display = 'block';
+    layoutEl.style.display = 'none';
+    countText.textContent = 'سلتك فارغة';
+    return;
+  }
+  
+  emptyEl.style.display = 'none';
+  layoutEl.style.display = 'grid';
+  countText.textContent = `${cart.reduce((s,i) => s+i.qty, 0)} منتج في سلتك`;
+  
+  itemsEl.innerHTML = cart.map(item => `
+    <div class="cart-item" id="item-${item.key.replace(/[^a-zA-Z0-9]/g, '_')}">
+      <div class="cart-item-img">
+        <img src="${item.img}" alt="${item.name}">
+      </div>
+      <div class="cart-item-info">
+        <h3 class="cart-item-name">${item.name}</h3>
+        <p class="cart-item-desc">الحجم: ${item.size}</p>
+        <div class="qty-control">
+          <button class="qty-btn" onclick="updateCartQty('${item.key}', -1)">−</button>
+          <span class="qty-val">${item.qty}</span>
+          <button class="qty-btn" onclick="updateCartQty('${item.key}', 1)">+</button>
+          <button onclick="removeItem('${item.key}')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:20px;margin-right:8px" title="حذف">🗑️</button>
+        </div>
+      </div>
+      <div class="cart-item-price">${(item.price * item.qty).toFixed(3)} د.ك</div>
+    </div>
+  `).join('');
+  
+  // Totals
+  const subtotal = getCartTotal();
+  const shipping = subtotal >= 40 ? 0 : 2.500;
+  const tax = 0; // No tax in Kuwait
+  const total = subtotal + shipping + tax;
+  
+  document.getElementById('subtotal').textContent = subtotal.toFixed(3) + ' د.ك';
+  document.getElementById('shipping-cost').textContent = shipping === 0 ? 'مجاني 🎉' : shipping.toFixed(3) + ' د.ك';
+  document.getElementById('tax-cost').textContent = '0 د.ك';
+  document.getElementById('total-cost').textContent = total.toFixed(3) + ' د.ك';
+}
+
+window.updateCartQty = (key, dir) => {
+  const item = cart.find(i => i.key === key);
+  if (!item) return;
+  item.qty += dir;
+  if (item.qty <= 0) { cart = cart.filter(i => i.key !== key); }
+  saveCart();
+  renderCart();
+};
+
+window.removeItem = (key) => {
+  removeFromCart(key);
+  renderCart();
+  showToast('تم حذف المنتج من السلة', 'info');
+};
+
+renderCart();
+</script>
+</body>
+</html>

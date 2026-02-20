@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إعدادات المتجر - لوحة التحكم</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<div class="admin-layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <a href="index.html" class="sidebar-logo">عطور <span>الخبير</span></a>
+      <div class="sidebar-sub">لوحة التحكم</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-label">الرئيسية</div>
+        <a href="admin-orders.html" class="sidebar-link">
+          <span class="icon">📊</span> لوحة التحكم
+        </a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">المتجر</div>
+        <a href="admin-products.html" class="sidebar-link">
+          <span class="icon">🌹</span> المنتجات
+        </a>
+        <a href="admin-orders.html" class="sidebar-link">
+          <span class="icon">📦</span> الطلبات
+        </a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">الإعدادات</div>
+        <a href="admin-settings.html" class="sidebar-link active">
+          <span class="icon">⚙️</span> إعدادات المتجر
+        </a>
+        <a href="index.html" class="sidebar-link">
+          <span class="icon">🌐</span> عرض الموقع
+        </a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="admin-user">
+        <div class="admin-avatar">👤</div>
+        <div>
+          <div class="admin-name">المدير</div>
+          <div class="admin-role">مدير النظام</div>
+        </div>
+        <button class="logout-btn" title="تسجيل الخروج">⏏️</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <h1 class="page-title">إعدادات المتجر</h1>
+      <div class="topbar-actions">
+        <button class="btn btn-primary" id="save-settings">💾 حفظ التغييرات</button>
+      </div>
+    </div>
+
+    <div class="admin-content">
+      <form id="settings-form">
+        <div class="settings-grid">
+          <!-- NAV -->
+          <div class="settings-nav">
+            <div class="settings-nav-item active" onclick="showTab('general', this)">
+              <span>🏪</span> معلومات المتجر
+            </div>
+            <div class="settings-nav-item" onclick="showTab('delivery', this)">
+              <span>🚚</span> الشحن والتوصيل
+            </div>
+            <div class="settings-nav-item" onclick="showTab('notifications', this)">
+              <span>🔔</span> الإشعارات
+            </div>
+            <div class="settings-nav-item" onclick="showTab('appearance', this)">
+              <span>🎨</span> المظهر
+            </div>
+            <div class="settings-nav-item" onclick="showTab('security', this)">
+              <span>🔐</span> الأمان
+            </div>
+          </div>
+
+          <!-- CONTENT -->
+          <div class="settings-content">
+            <!-- GENERAL -->
+            <div class="settings-section tab-content" id="tab-general">
+              <div class="settings-header">
+                <h3>🏪 معلومات المتجر</h3>
+                <p>البيانات الأساسية لمتجرك</p>
+              </div>
+              <div class="settings-body">
+                <div class="form-grid" style="margin-bottom:20px">
+                  <div class="form-group">
+                    <label>اسم المتجر</label>
+                    <input type="text" class="form-control" id="store-name" value="عطور الخبير">
+                  </div>
+                  <div class="form-group">
+                    <label>المدينة</label>
+                    <input type="text" class="form-control" id="store-city" value="الرياض">
+                  </div>
+                  <div class="form-group">
+                    <label>رقم الهاتف</label>
+                    <input type="tel" class="form-control" id="store-phone" value="0500000000" dir="ltr">
+                  </div>
+                  <div class="form-group">
+                    <label>البريد الإلكتروني</label>
+                    <input type="email" class="form-control" id="store-email" value="info@perfume.sa" dir="ltr">
+                  </div>
+                  <div class="form-group form-full">
+                    <label>وصف المتجر</label>
+                    <textarea class="form-control" id="store-desc" rows="3">نقدم أفخر وأرقى العطور الشرقية والعالمية</textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- DELIVERY -->
+            <div class="settings-section tab-content" id="tab-delivery" style="display:none">
+              <div class="settings-header">
+                <h3>🚚 إعدادات الشحن</h3>
+                <p>ضبط خيارات التوصيل والشحن</p>
+              </div>
+              <div class="settings-body">
+                <div class="form-grid" style="margin-bottom:20px">
+                  <div class="form-group">
+                    <label>مدة التوصيل (أيام)</label>
+                    <input type="text" class="form-control" id="delivery-time" value="2-5 أيام عمل">
+                  </div>
+                  <div class="form-group">
+                    <label>الحد الأدنى للشحن المجاني (KWD)</label>
+                    <input type="number" class="form-control" id="min-order" value="300">
+                  </div>
+                </div>
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <h4>الدفع عند الاستلام</h4>
+                    <p>السماح للعملاء بالدفع عند استلام الطلب</p>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" data-key="cod-enabled" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <h4>الشحن المجاني</h4>
+                    <p>تفعيل الشحن المجاني للطلبات التي تتجاوز الحد الأدنى</p>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" data-key="free-shipping" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <h4>التوصيل السريع</h4>
+                    <p>خيار التوصيل خلال 24 ساعة بتكلفة إضافية</p>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" data-key="express-shipping">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- NOTIFICATIONS -->
+            <div class="settings-section tab-content" id="tab-notifications" style="display:none">
+              <div class="settings-header">
+                <h3>🔔 إعدادات الإشعارات</h3>
+                <p>ضبط إشعارات الطلبات والعملاء</p>
+              </div>
+              <div class="settings-body">
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <h4>إشعار بريد طلب جديد</h4>
+                    <p>استقبال إيميل عند كل طلب جديد</p>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" data-key="email-orders" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <h4>إشعار تأكيد للعميل</h4>
+                    <p>إرسال رسالة تأكيد للعميل عند الطلب</p>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" data-key="customer-confirm" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <h4>تنبيه نفاد المخزون</h4>
+                    <p>تنبيه عند وصول المخزون لأقل من 5 قطع</p>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" data-key="stock-alert" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <h4>النشرة البريدية</h4>
+                    <p>إرسال عروض دورية للمشتركين</p>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" data-key="newsletter" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- APPEARANCE -->
+            <div class="settings-section tab-content" id="tab-appearance" style="display:none">
+              <div class="settings-header">
+                <h3>🎨 إعدادات المظهر</h3>
+                <p>تخصيص مظهر الموقع</p>
+              </div>
+              <div class="settings-body">
+                <div class="form-group" style="margin-bottom:20px">
+                  <label>اللون الرئيسي</label>
+                  <div style="display:flex;gap:12px;align-items:center;margin-top:8px">
+                    <input type="color" value="#FF6B00" style="width:48px;height:48px;border:none;background:none;cursor:pointer;border-radius:6px">
+                    <span style="font-size:13px;color:var(--text-muted)">#FF6B00 - البرتقالي الكلاسيكي</span>
+                  </div>
+                </div>
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <h4>عرض شريط الإعلانات</h4>
+                    <p>عرض شريط إعلانات في أعلى الموقع</p>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" data-key="show-banner" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <h4>عرض الشات المساعد</h4>
+                    <p>إظهار زر الدردشة الذكي في الموقع</p>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" data-key="show-chat" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+                <div class="toggle-row">
+                  <div class="toggle-info">
+                    <h4>عرض التقييمات</h4>
+                    <p>عرض آراء العملاء في الصفحة الرئيسية</p>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" data-key="show-reviews" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECURITY -->
+            <div class="settings-section tab-content" id="tab-security" style="display:none">
+              <div class="settings-header">
+                <h3>🔐 إعدادات الأمان</h3>
+                <p>تغيير بيانات تسجيل الدخول</p>
+              </div>
+              <div class="settings-body">
+                <div class="form-grid" style="margin-bottom:20px">
+                  <div class="form-group">
+                    <label>اسم المستخدم الجديد</label>
+                    <input type="text" class="form-control" id="new-username" placeholder="admin">
+                  </div>
+                  <div class="form-group">
+                    <label>كلمة المرور الجديدة</label>
+                    <input type="password" class="form-control" id="new-password" placeholder="••••••••">
+                  </div>
+                  <div class="form-group">
+                    <label>تأكيد كلمة المرور</label>
+                    <input type="password" class="form-control" id="confirm-password" placeholder="••••••••">
+                  </div>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="changePassword()">🔐 تغيير كلمة المرور</button>
+                <div style="margin-top:24px;padding-top:24px;border-top:1px solid var(--border-subtle)">
+                  <h4 style="margin-bottom:8px;color:var(--red)">⚠️ منطقة الخطر</h4>
+                  <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px">حذف جميع بيانات المتجر لا يمكن التراجع عنه</p>
+                  <button type="button" class="btn btn-danger" onclick="clearAllData()">🗑️ حذف جميع البيانات</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>
+
+<script>
+window.PRODUCTS_DEFAULT = [];
+
+function showTab(name, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+  document.getElementById('tab-' + name).style.display = 'block';
+  document.querySelectorAll('.settings-nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function changePassword() {
+  const np = document.getElementById('new-password').value;
+  const cp = document.getElementById('confirm-password').value;
+  if (!np) { alert('أدخل كلمة المرور الجديدة'); return; }
+  if (np !== cp) { alert('كلمات المرور غير متطابقة'); return; }
+  alert('تم تغيير كلمة المرور بنجاح! (في التطبيق الحقيقي سيتم حفظها في السيرفر)');
+}
+
+function clearAllData() {
+  if (!confirm('هل أنت متأكد؟ سيتم حذف جميع البيانات بشكل نهائي!')) return;
+  if (!confirm('تأكيد أخير: سيتم حذف الطلبات والمنتجات والإعدادات. هل تريد المتابعة؟')) return;
+  localStorage.clear();
+  alert('تم حذف جميع البيانات');
+  window.location.href = 'admin.html';
+}
+</script>
+<script src="admin.js"></script>
+</body>
+</html>

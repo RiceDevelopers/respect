@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إدارة المنتجات - لوحة التحكم</title>
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<div class="admin-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <a href="index.html" class="sidebar-logo">عطور <span>الخبير - الكويت</span></a>
+      <div class="sidebar-sub">لوحة التحكم 🇰🇼</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-label">الرئيسية</div>
+        <a href="admin-orders.html" class="sidebar-link">
+          <span class="icon">📊</span> لوحة التحكم
+        </a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">المتجر</div>
+        <a href="admin-products.html" class="sidebar-link active">
+          <span class="icon">🌹</span> المنتجات
+        </a>
+        <a href="admin-orders.html" class="sidebar-link">
+          <span class="icon">📦</span> الطلبات
+          <span class="badge" id="pending-count">...</span>
+        </a>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-label">الإعدادات</div>
+        <a href="admin-settings.html" class="sidebar-link">
+          <span class="icon">⚙️</span> إعدادات المتجر
+        </a>
+        <a href="index.html" class="sidebar-link">
+          <span class="icon">🌐</span> عرض الموقع
+        </a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="admin-user">
+        <div class="admin-avatar">🇰🇼</div>
+        <div>
+          <div class="admin-name">المدير</div>
+          <div class="admin-role">مدير النظام - الكويت</div>
+        </div>
+        <button class="logout-btn" title="تسجيل الخروج">⏏️</button>
+      </div>
+    </div>
+  </aside>
+
+  <main class="admin-main">
+    <div class="admin-topbar">
+      <h1 class="page-title">إدارة المنتجات</h1>
+      <div class="topbar-actions">
+        <button class="btn btn-primary" id="add-product-btn">+ إضافة منتج</button>
+      </div>
+    </div>
+
+    <div class="admin-content">
+      <div class="data-table-card">
+        <div class="table-header">
+          <h2 class="table-title">جميع المنتجات</h2>
+          <div class="table-actions">
+            <input type="text" class="search-input" placeholder="بحث عن منتج...">
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table id="products-table">
+            <thead>
+              <tr>
+                <th>الصورة</th>
+                <th>اسم المنتج</th>
+                <th>الفئة</th>
+                <th>السعر (د.ك)</th>
+                <th>المخزون</th>
+                <th>الحالة</th>
+                <th>إجراءات</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- PRODUCT MODAL -->
+<div class="modal-overlay" id="product-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" id="modal-title">إضافة منتج جديد</h3>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="product-id">
+      <form id="product-form">
+        <div class="form-grid" style="margin-bottom:16px">
+          <div class="form-group">
+            <label>اسم المنتج *</label>
+            <input type="text" class="form-control" id="product-name" placeholder="مثال: روز نوار" required>
+          </div>
+          <div class="form-group">
+            <label>الفئة *</label>
+            <select class="form-control" id="product-category" required>
+              <option value="نسائي">نسائي</option>
+              <option value="رجالي">رجالي</option>
+              <option value="يونيسكس">يونيسكس</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>السعر (د.ك) *</label>
+            <input type="number" class="form-control" id="product-price" placeholder="25" required min="0" step="0.001">
+          </div>
+          <div class="form-group">
+            <label>المخزون المتاح</label>
+            <input type="number" class="form-control" id="product-stock" placeholder="20" min="0" value="10">
+          </div>
+          <div class="form-group form-full">
+            <label>الأحجام (مفصولة بفاصلة)</label>
+            <input type="text" class="form-control" id="product-sizes" placeholder="30ml, 50ml, 100ml" dir="ltr">
+          </div>
+          <div class="form-group">
+            <label>الشارة</label>
+            <input type="text" class="form-control" id="product-badge" placeholder="مثال: جديد, حصري, الأكثر مبيعاً">
+          </div>
+          <div class="form-group form-full">
+            <label>رابط الصورة</label>
+            <input type="url" class="form-control" id="product-img-url" placeholder="https://..." dir="ltr">
+          </div>
+          <div class="form-group form-full">
+            <div id="img-previews" class="uploaded-images"></div>
+          </div>
+          <div class="form-group form-full">
+            <label>وصف المنتج *</label>
+            <textarea class="form-control" id="product-desc" placeholder="وصف تفصيلي للعطر..." rows="3"></textarea>
+          </div>
+          <div class="form-group form-full">
+            <label>نوتات العطر</label>
+            <textarea class="form-control" id="product-notes" placeholder="العلوية: | القلب: | القاعدة:" rows="2"></textarea>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">إلغاء</button>
+      <button class="btn btn-primary" id="save-product-btn">💾 حفظ المنتج</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PRODUCTS_DEFAULT = [
+  {id:1,name:"روز نوار",category:"نسائي",price:28.500,stock:24,badge:"الأكثر مبيعاً",desc:"عطر ملكي يجمع بين وردة الطائف النادرة والمسك الأبيض الشفاف",notes:"العلوية: وردة | القلب: ياسمين | القاعدة: مسك",sizes:["30ml","50ml","100ml"],img:"https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?w=200&h=200&fit=crop",imgs:["https://images.unsplash.com/photo-1588405748880-12d1d2a59f75?w=600&h=600&fit=crop"],active:true,featured:true},
+  {id:2,name:"عود الملوك",category:"رجالي",price:45.000,stock:12,badge:"حصري",desc:"عبق العود الكمبودي الفاخر المدمج بالبخور الشرقي",notes:"العلوية: توابل | القلب: عود | القاعدة: كهرمان",sizes:["50ml","100ml"],img:"https://images.unsplash.com/photo-1602928321679-560bb453f190?w=200&h=200&fit=crop",imgs:["https://images.unsplash.com/photo-1602928321679-560bb453f190?w=600&h=600&fit=crop"],active:true,featured:true},
+  {id:3,name:"لؤلؤة الشرق",category:"نسائي",price:19.500,stock:35,badge:null,desc:"تركيبة أنثوية رقيقة تمزج بين البخور الأبيض وأزهار الليمون",notes:"العلوية: ليمون | القلب: بخور | القاعدة: فانيليا",sizes:["30ml","50ml","100ml"],img:"https://images.unsplash.com/photo-1595535868835-74088c83f98a?w=200&h=200&fit=crop",imgs:["https://images.unsplash.com/photo-1595535868835-74088c83f98a?w=600&h=600&fit=crop"],active:true,featured:true},
+  {id:4,name:"نخلة السيف",category:"رجالي",price:32.000,stock:18,badge:"جديد",desc:"قوة وأناقة في آن واحد",notes:"العلوية: نعناع | القلب: خشب | القاعدة: مسك",sizes:["50ml","100ml","200ml"],img:"https://images.unsplash.com/photo-1541643600914-78b084683702?w=200&h=200&fit=crop",imgs:["https://images.unsplash.com/photo-1541643600914-78b084683702?w=600&h=600&fit=crop"],active:true,featured:false},
+  {id:5,name:"غيمة العشق",category:"يونيسكس",price:23.000,stock:0,badge:null,desc:"مزيج سحري من الزهور الشرقية",notes:"العلوية: برغموت | القلب: وردة | القاعدة: مسك",sizes:["30ml","50ml"],img:"https://images.unsplash.com/photo-1592945403244-b3faa00c5a21?w=200&h=200&fit=crop",imgs:["https://images.unsplash.com/photo-1592945403244-b3faa00c5a21?w=600&h=600&fit=crop"],active:false,featured:true},
+  {id:6,name:"سلطانة الليل",category:"نسائي",price:39.000,stock:8,badge:"محدود",desc:"روح الليل الشرقي في زجاجة",notes:"العلوية: ياسمين | القلب: عود | القاعدة: عنبر",sizes:["50ml","100ml"],img:"https://images.unsplash.com/photo-1563170351-be54bff31d8c?w=200&h=200&fit=crop",imgs:["https://images.unsplash.com/photo-1563170351-be54bff31d8c?w=600&h=600&fit=crop"],active:true,featured:false},
+  {id:7,name:"ذهب الصحراء",category:"رجالي",price:26.000,stock:22,badge:null,desc:"روح الصحراء العربية",notes:"العلوية: لبان | القلب: عود | القاعدة: كهرمان",sizes:["50ml","100ml"],img:"https://images.unsplash.com/photo-1577401132921-cb39bb0adcff?w=200&h=200&fit=crop",imgs:["https://images.unsplash.com/photo-1577401132921-cb39bb0adcff?w=600&h=600&fit=crop"],active:true,featured:false},
+  {id:8,name:"نسمة الفجر",category:"يونيسكس",price:17.500,stock:40,badge:"الأحب للعملاء",desc:"خفيف كنسمة الفجر",notes:"العلوية: شاي أخضر | القلب: فريزيا | القاعدة: مسك أبيض",sizes:["30ml","50ml","100ml"],img:"https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=200&h=200&fit=crop",imgs:["https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=600&h=600&fit=crop"],active:true,featured:false}
+];
+window.PRODUCTS_DEFAULT = PRODUCTS_DEFAULT;
+
+// Load saved products or use defaults
+if (!localStorage.getItem('admin_products')) {
+  localStorage.setItem('admin_products', JSON.stringify(PRODUCTS_DEFAULT));
+}
+
+// Update pending count
+const orders = JSON.parse(localStorage.getItem('admin_orders') || '[]');
+const pending = orders.filter(o => o.status === 'pending').length;
+const badge = document.getElementById('pending-count');
+if (badge) badge.textContent = pending || '';
+</script>
+<script src="admin.js"></script>
+</body>
+</html>
