@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gift Star - متجر الهدايا الكويتي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- Header -->
+<header class="site-header">
+  <div class="header-top">
+    <div class="container">
+      <span class="header-tagline">توصيل داخل الكويت فقط</span>
+      <div class="header-links">
+        <a href="cart.html" class="cart-link">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="9" cy="21" r="1"/>
+            <circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          </svg>
+          <span class="cart-count" id="cartCount">0</span>
+        </a>
+        <a href="login.html" class="btn-login" id="loginBtn">تسجيل الدخول</a>
+        <a href="#" class="btn-login" id="logoutBtn" style="display:none" onclick="logout()">خروج</a>
+      </div>
+    </div>
+  </div>
+  <div class="header-main">
+    <div class="container header-flex">
+      <a href="index.html" class="logo">
+        <div class="logo-star">★</div>
+        <div class="logo-text">
+          <span class="logo-gift">Gift</span>
+          <span class="logo-star-word">Star</span>
+        </div>
+      </a>
+      <nav class="main-nav">
+        <a href="index.html" class="active">الرئيسية</a>
+        <a href="shop.html">المتجر</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+
+<!-- Promotions Banner -->
+<section class="promo-section" id="promoSection">
+  <div class="container">
+    <h2 class="section-title">العروض والتخفيضات</h2>
+    <div class="promo-grid" id="promoGrid">
+      <!-- Loaded from JS -->
+    </div>
+  </div>
+</section>
+
+<!-- Categories -->
+<section class="categories-section">
+  <div class="container">
+    <h2 class="section-title">تسوق حسب الفئة</h2>
+    <div class="categories-grid">
+      <a href="shop.html?cat=cakes" class="category-card">
+        <div class="cat-img-wrap">
+          <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=300&h=300&fit=crop" alt="كيك">
+        </div>
+        <span>كيك</span>
+      </a>
+      <a href="shop.html?cat=flowers" class="category-card">
+        <div class="cat-img-wrap">
+          <img src="https://images.unsplash.com/photo-1490750967868-88df5691cc95?w=300&h=300&fit=crop" alt="ورد">
+        </div>
+        <span>ورد</span>
+      </a>
+      <a href="shop.html?cat=gifts" class="category-card">
+        <div class="cat-img-wrap">
+          <img src="https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=300&h=300&fit=crop" alt="هدايا">
+        </div>
+        <span>هدايا</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Featured Products -->
+<section class="featured-section">
+  <div class="container">
+    <h2 class="section-title">المنتجات المميزة</h2>
+    <div class="products-grid" id="featuredProducts">
+      <!-- Loaded from JS -->
+    </div>
+    <div class="text-center" style="margin-top:2rem; text-align:center">
+      <a href="shop.html" class="btn-outline">عرض جميع المنتجات</a>
+    </div>
+  </div>
+</section>
+
+<!-- Why Us -->
+<section class="why-section">
+  <div class="container">
+    <h2 class="section-title">لماذا Gift Star؟</h2>
+    <div class="why-grid">
+      <div class="why-card">
+        <div class="why-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <h3>جودة مضمونة</h3>
+        <p>جميع منتجاتنا طازجة ومختارة بعناية فائقة</p>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <h3>توصيل سريع</h3>
+        <p>نوصل في نفس اليوم لجميع مناطق الكويت</p>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </div>
+        <h3>خدمة شخصية</h3>
+        <p>نساعدك في اختيار الهدية المثالية لأحبائك</p>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+            <line x1="1" y1="10" x2="23" y2="10"/>
+          </svg>
+        </div>
+        <h3>دفع آمن</h3>
+        <p>طرق دفع متعددة وآمنة 100%</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo" style="margin-bottom:1rem">
+          <div class="logo-star">★</div>
+          <div class="logo-text">
+            <span class="logo-gift">Gift</span>
+            <span class="logo-star-word">Star</span>
+          </div>
+        </div>
+        <p>متجر الهدايا الكويتي الأول لكل مناسباتك المميزة</p>
+      </div>
+      <div class="footer-links-col">
+        <h4>المتجر</h4>
+        <a href="shop.html?cat=cakes">كيك</a>
+        <a href="shop.html?cat=flowers">ورد</a>
+      </div>
+      <div class="footer-links-col">
+        <h4>الحساب</h4>
+        <a href="login.html">تسجيل الدخول</a>
+        <a href="register.html">إنشاء حساب</a>
+        <a href="cart.html">سلة المشتريات</a>
+      </div>
+      <div class="footer-links-col">
+        <h4>تواصل معنا</h4>
+        <span>الكويت - جميع المحافظات</span>
+        <span><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="aec7c0c8c1eec9c7c8dadddacfdc80cdc1c380c5d9">[email&#160;protected]</a></span>
+        <span>+965 XXXX XXXX</span>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2024 Gift Star. جميع الحقوق محفوظة - الكويت</p>
+    </div>
+  </div>
+</footer>
+
+<div class="stars-bg"></div>
+
+<script src="js/data.js"></script>
+<script>
+// Slider variables
+let currentSlide = 0;
+let slideInterval;
+
+// تهيئة الصفحة
+function init() {
+  // تحديث الهيدر
+  if (typeof giftstar !== 'undefined' && giftstar.updateHeader) {
+    giftstar.updateHeader();
+  } else {
+    updateHeaderLocal();
+  }
+  
+  // تهيئة السلايدر
+  initSlider();
+  
+  // عرض العروض
+  renderPromos();
+  
+  // عرض المنتجات المميزة
+  renderFeaturedProducts();
+}
+
+// السلايدر
+function initSlider() {
+  const slides = document.querySelectorAll('.slide');
+  const dotsContainer = document.getElementById('sliderDots');
+  
+  if (!slides.length || !dotsContainer) return;
+
+  // إنشاء النقاط
+  dotsContainer.innerHTML = '';
+  slides.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (i === 0 ? ' active' : '');
+    dot.onclick = () => goToSlide(i);
+    dotsContainer.appendChild(dot);
+  });
+
+  // تشغيل السلايدر التلقائي
+  if (slideInterval) clearInterval(slideInterval);
+  slideInterval = setInterval(() => changeSlide(1), 5000);
+}
+
+function changeSlide(dir) {
+  const slides = document.querySelectorAll('.slide');
+  if (!slides.length) return;
+  
+  slides[currentSlide].classList.remove('active');
+  currentSlide = (currentSlide + dir + slides.length) % slides.length;
+  slides[currentSlide].classList.add('active');
+  
+  document.querySelectorAll('.dot').forEach((d, i) => {
+    d.classList.toggle('active', i === currentSlide);
+  });
+}
+
+function goToSlide(n) {
+  const slides = document.querySelectorAll('.slide');
+  if (!slides.length) return;
+  
+  slides[currentSlide].classList.remove('active');
+  currentSlide = n;
+  slides[currentSlide].classList.add('active');
+  
+  document.querySelectorAll('.dot').forEach((d, i) => {
+    d.classList.toggle('active', i === currentSlide);
+  });
+}
+
+// عرض العروض
+function renderPromos() {
+  const container = document.getElementById('promoGrid');
+  if (!container) return;
+
+  let promos = [];
+  
+  if (typeof giftstar !== 'undefined' && giftstar.getData) {
+    promos = giftstar.getData('promos', []).filter(p => p.active);
+  } else {
+    promos = getDataLocal('promos', []).filter(p => p.active);
+  }
+  
+  if (!promos.length) {
+    document.querySelector('.promo-section').style.display = 'none';
+    return;
+  }
+
+  container.innerHTML = promos.map(p => `
+    <div class="promo-card">
+      <img src="${p.image}" alt="${p.title}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=600&h=300&fit=crop'">
+      <div class="promo-overlay">
+        <span class="promo-badge">${p.badge || 'عرض'}</span>
+        <h3>${p.title}</h3>
+        <p>${p.description}</p>
+      </div>
+    </div>
+  `).join('');
+}
+
+// عرض المنتجات المميزة
+function renderFeaturedProducts() {
+  const container = document.getElementById('featuredProducts');
+  if (!container) return;
+
+  let products = [];
+  
+  if (typeof giftstar !== 'undefined' && giftstar.getProducts) {
+    products = giftstar.getProducts({ featured: true, active: true }).slice(0, 8);
+  } else {
+    products = getDataLocal('products', []).filter(p => p.featured && p.active).slice(0, 8);
+  }
+  
+  console.log('Featured products:', products.length);
+  
+  if (!products.length) {
+    container.innerHTML = '<div class="loading" style="grid-column:1/-1">لا توجد منتجات</div>';
+    return;
+  }
+
+  container.innerHTML = products.map(p => productCardHTML(p)).join('');
+}
+
+// قالب بطاقة المنتج
+function productCardHTML(p) {
+  return `
+    <div class="product-card" onclick="window.location.href='product.html?id=${p.id}'" style="cursor:pointer">
+      ${p.badge ? `<span class="product-badge">${p.badge}</span>` : ''}
+      <img src="${p.image}" alt="${p.name}" class="product-img" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=400&h=300&fit=crop'">
+      <div class="product-info">
+        <h3 class="product-name">${p.name}</h3>
+        <p class="product-desc">${p.description.substring(0, 60)}...</p>
+        <div class="product-footer">
+          <div class="product-price">${formatPrice(p.price)}</div>
+          <button class="btn-add-cart" onclick="event.stopPropagation();handleAddToCart(${p.id}, this)">أضف للسلة</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// إضافة للسلة
+function handleAddToCart(productId, btn) {
+  const user = typeof giftstar !== 'undefined' && giftstar.getCurrentUser ? 
+               giftstar.getCurrentUser() : getCurrentUserLocal();
+  
+  if (!user) {
+    sessionStorage.setItem('giftstar_redirect_after_login', window.location.href);
+    window.location.href = 'login.html?msg=login_required';
+    return;
+  }
+  
+  if (typeof giftstar !== 'undefined' && giftstar.addToCart) {
+    giftstar.addToCart(productId);
+  } else {
+    addToCartLocal(productId);
+  }
+  
+  btn.textContent = '✓ تمت الإضافة';
+  btn.style.background = 'var(--success)';
+  
+  setTimeout(() => {
+    btn.textContent = 'أضف للسلة';
+    btn.style.background = '';
+  }, 1500);
+  
+  if (typeof giftstar !== 'undefined' && giftstar.showNotification) {
+    giftstar.showNotification('تمت إضافة المنتج للسلة', 'success');
+  } else {
+    showNotificationLocal('تمت إضافة المنتج للسلة', 'success');
+  }
+}
+
+// تنسيق السعر
+function formatPrice(price) {
+  if (typeof giftstar !== 'undefined' && giftstar.formatKWD) {
+    return giftstar.formatKWD(price);
+  }
+  return price.toFixed(3) + ' د.ك';
+}
+
+// دوال مساعدة محلية (فشل safe)
+function getDataLocal(key, fallback) {
+  try {
+    const v = localStorage.getItem('giftstar_' + key);
+    return v ? JSON.parse(v) : fallback;
+  } catch { return fallback; }
+}
+
+function getCurrentUserLocal() {
+  try {
+    return JSON.parse(sessionStorage.getItem('giftstar_user'));
+  } catch { return null; }
+}
+
+function addToCartLocal(productId, qty = 1) {
+  const products = getDataLocal('products', []);
+  const product = products.find(p => p.id === productId);
+  if (!product) return false;
+
+  let cart = getDataLocal('cart', []);
+  const existing = cart.find(i => i.id === productId);
+  
+  if (existing) {
+    existing.qty += qty;
+  } else {
+    cart.push({ 
+      id: productId, 
+      qty, 
+      name: product.name, 
+      price: product.price, 
+      image: product.image 
+    });
+  }
+  
+  localStorage.setItem('giftstar_cart', JSON.stringify(cart));
+  updateCartBadgeLocal();
+  return true;
+}
+
+function updateCartBadgeLocal() {
+  try {
+    const cart = JSON.parse(localStorage.getItem('giftstar_cart') || '[]');
+    const total = cart.reduce((s, i) => s + i.qty, 0);
+    document.querySelectorAll('.cart-count, #cartCount').forEach(el => {
+      if (el) el.textContent = total;
+    });
+  } catch (e) {
+    console.error('Error updating cart badge:', e);
+  }
+}
+
+function updateHeaderLocal() {
+  const user = getCurrentUserLocal();
+  const loginBtn = document.getElementById('loginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  
+  if (!loginBtn) return;
+  
+  if (user) {
+    loginBtn.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'inline-block';
+  } else {
+    loginBtn.style.display = 'inline-block';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+  }
+  
+  updateCartBadgeLocal();
+}
+
+function showNotificationLocal(msg, type) {
+  const el = document.createElement('div');
+  el.className = 'notification ' + (type || 'success');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function logout() {
+  sessionStorage.removeItem('giftstar_user');
+  window.location.href = 'index.html';
+}
+
+// تشغيل التهيئة
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

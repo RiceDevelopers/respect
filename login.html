@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تسجيل الدخول - Gift Star</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="site-header">
+  <div class="header-main">
+    <div class="container header-flex">
+      <a href="index.html" class="logo">
+        <div class="logo-star">★</div>
+        <div class="logo-text">
+          <span class="logo-gift">Gift</span>
+          <span class="logo-star-word">Star</span>
+        </div>
+      </a>
+    </div>
+  </div>
+</header>
+
+<div class="auth-page">
+  <div class="auth-card">
+    <h2>تسجيل الدخول</h2>
+    <p class="auth-sub">مرحباً بك في Gift Star</p>
+
+    <div id="msgBanner" style="display:none" class="alert alert-error"></div>
+
+    <div class="form-group">
+      <label class="form-label">البريد الإلكتروني</label>
+      <input type="email" id="email" class="form-input" placeholder="example@email.com" dir="ltr">
+    </div>
+    <div class="form-group">
+      <label class="form-label">كلمة المرور</label>
+      <input type="password" id="password" class="form-input" placeholder="كلمة المرور" dir="ltr">
+    </div>
+
+    <button class="btn-submit" onclick="doLogin()">دخول</button>
+
+    <div class="auth-footer" style="margin-top:16px">
+      ليس لديك حساب؟ <a href="register.html">إنشاء حساب جديد</a>
+    </div>
+
+    <div style="margin-top:10px;text-align:center">
+      <button onclick="resetData()" style="background:none;border:1px solid #ddd;padding:7px 16px;border-radius:8px;font-size:12px;color:#999;cursor:pointer;font-family:var(--font)">
+        مشكلة في الدخول؟ اضغط هنا
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script>
+// Show message if redirected
+const params = new URLSearchParams(window.location.search);
+if (params.get('msg') === 'login_required') {
+  const b = document.getElementById('msgBanner');
+  b.style.display = 'block';
+  b.textContent = 'يرجى تسجيل الدخول أولاً لإضافة منتجات للسلة';
+}
+
+function doLogin() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const banner = document.getElementById('msgBanner');
+
+  if (!email || !password) {
+    banner.className = 'alert alert-error';
+    banner.textContent = 'يرجى ملء جميع الحقول';
+    banner.style.display = 'block';
+    return;
+  }
+
+  // Debug: check what users exist
+  const users = getData('users', []);
+  console.log('Users in storage:', users);
+  console.log('Trying:', email, password);
+
+  const result = login(email, password);
+  console.log('Login result:', result);
+
+  if (!result.success) {
+    banner.className = 'alert alert-error';
+    banner.textContent = result.error;
+    banner.style.display = 'block';
+    return;
+  }
+
+  const user = result.user;
+  if (user.role === 'admin') {
+    window.location.href = 'admin/index.html';
+    return;
+  }
+
+  const redirect = sessionStorage.getItem('giftstar_redirect_after_login') || 'index.html';
+  sessionStorage.removeItem('giftstar_redirect_after_login');
+  window.location.href = redirect;
+}
+
+function resetData() {
+  if (confirm('سيتم مسح جميع البيانات المحفوظة وإعادة التهيئة. هل تريد المتابعة؟')) {
+    // Clear all giftstar data
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('giftstar_')) localStorage.removeItem(key);
+    });
+    sessionStorage.clear();
+    // Re-init
+    initData();
+    alert('تم إعادة التهيئة. يمكنك الآن تسجيل الدخول بـ admin@giftstar.kw / Admin@2024');
+  }
+}
+
+document.addEventListener('keypress', e => {
+  if (e.key === 'Enter') doLogin();
+});
+</script>
+</body>
+</html>
