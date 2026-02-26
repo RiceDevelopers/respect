@@ -51,6 +51,31 @@
 
 <script src="js/data.js"></script>
 <script>
+
+  // تعديل دالة init في receipt.html
+async function init() {
+  // التحقق من وجود orderId في الرابط
+  const urlParams = new URLSearchParams(window.location.search);
+  const orderId = urlParams.get('order');
+  
+  let order;
+  
+  if (orderId) {
+    // جلب الطلب من قاعدة البيانات
+    const orders = await giftstar.getData('orders') || [];
+    order = orders.find(o => o.id === orderId);
+  } else {
+    // جلب آخر طلب من session
+    order = JSON.parse(sessionStorage.getItem('giftstar_last_order') || 'null');
+  }
+  
+  if (!order) {
+    window.location.href = 'index.html';
+    return;
+  }
+
+}
+  
 function init() {
   const order = JSON.parse(sessionStorage.getItem('giftstar_last_order') || 'null');
   if (!order) { window.location.href = 'index.html'; return; }
