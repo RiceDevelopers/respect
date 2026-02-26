@@ -3,325 +3,205 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>الإيصال - Gift Star</title>
+<title>طلباتي - Gift Star</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
-  .receipt-page {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 20px;
-    background: linear-gradient(135deg, var(--secondary) 0%, #0a0e1a 100%);
+  .orders-page {
+    padding: 50px 0;
+    min-height: 60vh;
   }
   
-  .receipt-card {
-    background: linear-gradient(135deg, var(--secondary-light) 0%, #1a1f2f 100%);
-    border-radius: 30px;
-    padding: 50px;
-    width: 100%;
-    max-width: 700px;
-    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
-    border: 1px solid var(--border);
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .receipt-card::before {
-    content: '★';
-    position: absolute;
-    top: -20px;
-    right: -20px;
-    font-size: 200px;
-    color: rgba(200,169,110,0.05);
-    transform: rotate(15deg);
-    pointer-events: none;
-  }
-  
-  .receipt-header {
+  .orders-header {
     text-align: center;
-    margin-bottom: 40px;
-    position: relative;
+    margin-bottom: 50px;
   }
   
-  .receipt-check {
-    width: 90px;
-    height: 90px;
-    background: linear-gradient(135deg, #5ec98a, #3fa86a);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 25px;
-    animation: scaleIn 0.5s ease;
-    box-shadow: 0 10px 30px rgba(94,201,138,0.3);
-  }
-  
-  .receipt-check svg {
-    width: 45px;
-    height: 45px;
-    color: white;
-  }
-  
-  .receipt-header h2 {
-    font-size: 32px;
+  .orders-header h1 {
+    font-size: 42px;
     font-weight: 900;
-    color: var(--success);
+    color: var(--text);
     margin-bottom: 10px;
     font-family: 'Playfair Display', serif;
   }
   
-  .receipt-header p {
+  .orders-header p {
     color: var(--text-muted);
     font-size: 16px;
   }
   
-  .receipt-number {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    border-radius: 50px;
-    padding: 15px 25px;
-    text-align: center;
-    margin-bottom: 30px;
-    font-weight: 800;
-    color: var(--secondary);
-    font-size: 20px;
-    letter-spacing: 1px;
-    box-shadow: 0 5px 15px rgba(200,169,110,0.3);
+  .orders-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 40px;
   }
   
-  .receipt-details {
-    background: rgba(0,0,0,0.2);
-    border-radius: 20px;
+  .stat-box {
+    background: var(--secondary-light);
+    border-radius: var(--radius);
     padding: 20px;
-    margin-bottom: 25px;
+    text-align: center;
     border: 1px solid var(--border);
   }
   
-  .receipt-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border);
-    color: var(--text-muted);
-    font-size: 15px;
-  }
-  
-  .receipt-row:last-of-type {
-    border: none;
-  }
-  
-  .receipt-row strong {
-    color: var(--text);
-    font-weight: 700;
-  }
-  
-  .receipt-items {
-    background: rgba(0,0,0,0.2);
-    border-radius: 20px;
-    padding: 20px;
-    margin: 20px 0;
-  }
-  
-  .receipt-items-title {
-    font-size: 18px;
-    font-weight: 800;
-    color: var(--primary);
-    margin-bottom: 15px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  
-  .receipt-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px dashed var(--border);
-  }
-  
-  .receipt-item:last-child {
-    border-bottom: none;
-  }
-  
-  .receipt-item-name {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  
-  .receipt-item-qty {
-    background: var(--primary);
-    color: var(--secondary);
-    width: 25px;
-    height: 25px;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: 800;
-  }
-  
-  .receipt-item-price {
-    font-weight: 700;
-    color: var(--text);
-  }
-  
-  .receipt-total {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 25px;
-    background: linear-gradient(135deg, rgba(200,169,110,0.1) 0%, rgba(200,169,110,0.2) 100%);
-    border-radius: 20px;
-    margin: 25px 0;
-    border: 1px solid var(--primary);
-  }
-  
-  .receipt-total-label {
-    font-size: 20px;
-    font-weight: 800;
-    color: var(--text);
-  }
-  
-  .receipt-total-amount {
-    font-size: 32px;
+  .stat-number {
+    font-size: 28px;
     font-weight: 900;
     color: var(--primary);
-    text-shadow: 0 0 20px rgba(200,169,110,0.3);
+    margin-bottom: 5px;
   }
   
-  .receipt-payment {
-    background: rgba(200,169,110,0.05);
-    border-radius: 15px;
-    padding: 15px;
-    margin: 15px 0;
-    border: 1px solid var(--border);
-  }
-  
-  .receipt-status {
-    margin: 20px 0;
-  }
-  
-  .status-badge {
-    display: inline-block;
-    padding: 8px 25px;
-    border-radius: 30px;
-    font-size: 16px;
-    font-weight: 700;
-    background: rgba(94,201,138,0.2);
-    color: #5ec98a;
-    border: 1px solid rgba(94,201,138,0.3);
-  }
-  
-  .status-badge.processing { background: rgba(243,156,18,0.2); color: #f39c12; }
-  .status-badge.delivered { background: rgba(52,152,219,0.2); color: #3498db; }
-  .status-badge.cancelled { background: rgba(224,85,85,0.2); color: #e05555; }
-  
-  .receipt-actions {
-    display: flex;
-    gap: 15px;
-    margin-top: 40px;
-  }
-  
-  .receipt-actions .btn-primary,
-  .receipt-actions .btn-outline {
-    flex: 1;
-    text-align: center;
-    padding: 15px;
-    font-size: 16px;
-    font-weight: 700;
-    border-radius: 15px;
-  }
-  
-  .company-signature {
-    text-align: center;
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid var(--border);
+  .stat-label {
     font-size: 14px;
     color: var(--text-muted);
   }
   
-  .company-signature .gold {
+  .orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .order-card {
+    background: var(--secondary-light);
+    border-radius: var(--radius-lg);
+    padding: 25px;
+    border: 1px solid var(--border);
+    transition: var(--transition);
+    cursor: pointer;
+  }
+  
+  .order-card:hover {
+    transform: translateY(-5px);
+    border-color: var(--primary);
+    box-shadow: 0 15px 35px rgba(200,169,110,0.2);
+  }
+  
+  .order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border);
+  }
+  
+  .order-id {
+    font-weight: 800;
     color: var(--primary);
-    font-weight: 700;
+    font-size: 18px;
   }
   
-  .error-container {
+  .order-date {
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+  
+  .order-items {
+    margin-bottom: 15px;
+  }
+  
+  .order-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+  
+  .order-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border);
+  }
+  
+  .order-total {
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--primary);
+  }
+  
+  .empty-orders {
     text-align: center;
-    padding: 60px 20px;
+    padding: 80px 20px;
+    background: var(--secondary-light);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
   }
   
-  .error-container svg {
-    width: 80px;
-    height: 80px;
+  .empty-orders svg {
+    width: 100px;
+    height: 100px;
     margin-bottom: 20px;
+    color: var(--border);
   }
   
-  .error-container h3 {
+  .empty-orders h3 {
     font-size: 24px;
-    color: var(--danger);
+    color: var(--text);
     margin-bottom: 10px;
   }
   
-  .error-container p {
+  .empty-orders p {
     color: var(--text-muted);
     margin-bottom: 30px;
   }
   
-  @media print {
-    .site-header,
-    .receipt-actions,
-    .stars-bg {
-      display: none !important;
-    }
-    
-    .receipt-page {
-      padding: 0;
-      background: white;
-    }
-    
-    .receipt-card {
-      box-shadow: none;
-      border: 1px solid #ddd;
-      background: white;
-    }
-    
-    .receipt-number {
-      background: #f0f0f0;
-      color: #333;
-      box-shadow: none;
-    }
+  .filter-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
   }
   
+  .filter-tab {
+    padding: 10px 25px;
+    border-radius: 30px;
+    background: var(--secondary-light);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  
+  .filter-tab:hover,
+  .filter-tab.active {
+    background: var(--primary);
+    color: var(--secondary);
+    border-color: var(--primary);
+  }
+  
+  .status-badge {
+    display: inline-block;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  
+  .status-badge.new { background: rgba(94,201,138,0.2); color: #5ec98a; border: 1px solid rgba(94,201,138,0.3); }
+  .status-badge.processing { background: rgba(243,156,18,0.2); color: #f39c12; border: 1px solid rgba(243,156,18,0.3); }
+  .status-badge.delivered { background: rgba(52,152,219,0.2); color: #3498db; border: 1px solid rgba(52,152,219,0.3); }
+  .status-badge.cancelled { background: rgba(224,85,85,0.2); color: #e05555; border: 1px solid rgba(224,85,85,0.3); }
+  
   @media (max-width: 768px) {
-    .receipt-actions {
-      flex-direction: column;
+    .orders-stats {
+      grid-template-columns: repeat(2, 1fr);
     }
   }
 </style>
 </head>
 <body>
-<header class="site-header" id="mainHeader">
-  <div class="header-main">
-    <div class="container header-flex">
-      <a href="index.html" class="logo">
-        <div class="logo-star">★</div>
-        <div class="logo-text">
-          <span class="logo-gift">Gift</span>
-          <span class="logo-star-word">Star</span>
-        </div>
-      </a>
-      <nav class="main-nav">
-        <a href="index.html">الرئيسية</a>
-        <a href="shop.html">المتجر</a>
-        <a href="my-orders.html">طلباتي</a>
-      </nav>
+<header class="site-header">
+  <div class="header-top">
+    <div class="container">
+      <span class="header-tagline">توصيل داخل الكويت فقط</span>
       <div class="header-links">
         <a href="cart.html" class="cart-link">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -336,65 +216,162 @@
       </div>
     </div>
   </div>
+  <div class="header-main">
+    <div class="container header-flex">
+      <a href="index.html" class="logo">
+        <div class="logo-star">★</div>
+        <div class="logo-text">
+          <span class="logo-gift">Gift</span>
+          <span class="logo-star-word">Star</span>
+        </div>
+      </a>
+      <nav class="main-nav">
+        <a href="index.html">الرئيسية</a>
+        <a href="shop.html">المتجر</a>
+        <a href="my-orders.html" class="active">طلباتي</a>
+      </nav>
+    </div>
+  </div>
 </header>
 
-<div class="receipt-page">
-  <div class="receipt-card" id="receiptContent">
+<div class="container orders-page">
+  <div class="orders-header">
+    <h1>طلباتي</h1>
+    <p>تتبع طلباتك واستعرض سجل مشترياتك</p>
+  </div>
+
+  <div id="ordersStats" class="orders-stats" style="display: none;">
+    <div class="stat-box">
+      <div class="stat-number" id="totalOrders">0</div>
+      <div class="stat-label">إجمالي الطلبات</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-number" id="pendingOrders">0</div>
+      <div class="stat-label">قيد المعالجة</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-number" id="completedOrders">0</div>
+      <div class="stat-label">مكتملة</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-number" id="totalSpent">0.000</div>
+      <div class="stat-label">إجمالي المشتريات</div>
+    </div>
+  </div>
+
+  <div class="filter-tabs" id="filterTabs">
+    <button class="filter-tab active" onclick="filterOrders('all')">جميع الطلبات</button>
+    <button class="filter-tab" onclick="filterOrders('new')">جديد</button>
+    <button class="filter-tab" onclick="filterOrders('processing')">قيد المعالجة</button>
+    <button class="filter-tab" onclick="filterOrders('delivered')">تم التوصيل</button>
+    <button class="filter-tab" onclick="filterOrders('cancelled')">ملغية</button>
+  </div>
+
+  <div id="ordersList" class="orders-list">
     <div class="loading">
       <div class="spinner"></div>
-      جاري تحميل بيانات الطلب...
+      جاري تحميل طلباتك...
     </div>
   </div>
 </div>
 
+<footer class="site-footer">
+  <div class="footer-bottom">
+    <p>© 2024 Gift Star. جميع الحقوق محفوظة - الكويت</p>
+  </div>
+</footer>
+
 <div class="stars-bg"></div>
 
-<script src="js/data.js"></script>
-<script>
-function init() {
-    if (window.updateHeader) window.updateHeader();
+<!-- Firebase SDK -->
+<script type="importmap">
+  {
+    "imports": {
+      "firebase/app": "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js",
+      "firebase/firestore": "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js",
+      "firebase/auth": "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js"
+    }
+  }
+</script>
+
+<script type="module" src="js/data.js"></script>
+<script type="module">
+import { getCurrentUser, getUserOrders, formatKWD, logout as firebaseLogout, updateHeader } from './js/data.js';
+
+let allOrders = [];
+let currentFilter = 'all';
+
+// تهيئة الصفحة
+window.addEventListener('DOMContentLoaded', async () => {
+    // تحديث الهيدر
+    updateHeader();
     
-    const urlParams = new URLSearchParams(window.location.search);
-    const orderId = urlParams.get('order');
-    
-    let order = null;
-    
-    if (orderId && window.getOrderById) {
-        order = window.getOrderById(orderId);
+    // التحقق من تسجيل الدخول
+    const user = getCurrentUser();
+    if (!user) {
+        sessionStorage.setItem('giftstar_redirect_after_login', 'my-orders.html');
+        window.location.href = 'login.html?msg=login_required';
+        return;
     }
     
-    if (!order) {
-        try {
-            const lastOrder = sessionStorage.getItem('giftstar_last_order');
-            order = lastOrder ? JSON.parse(lastOrder) : null;
-        } catch (e) {
-            console.error('خطأ في قراءة آخر طلب:', e);
-        }
-    }
+    // تحميل الطلبات
+    await loadUserOrders();
+});
+
+// تحميل الطلبات
+async function loadUserOrders() {
+    const container = document.getElementById('ordersList');
+    container.innerHTML = '<div class="loading"><div class="spinner"></div>جاري تحميل طلباتك...</div>';
     
-    if (!order) {
-        try {
-            const lastOrder = localStorage.getItem('giftstar_last_order');
-            order = lastOrder ? JSON.parse(lastOrder) : null;
-        } catch (e) {
-            console.error('خطأ في قراءة آخر طلب:', e);
-        }
-    }
+    allOrders = await getUserOrders();
+    console.log('✅ تم العثور على', allOrders.length, 'طلبات');
     
-    if (order) {
-        displayOrder(order);
-    } else {
-        showError('لم يتم العثور على الطلب');
-    }
+    displayStats();
+    displayOrders(allOrders);
 }
 
-function displayOrder(order) {
-    order.customer = order.customer || {};
-    order.items = order.items || [];
+// عرض الإحصائيات
+function displayStats() {
+    const statsDiv = document.getElementById('ordersStats');
+    if (!statsDiv) return;
     
-    const subtotal = order.items.reduce((sum, item) => sum + ((item.price || 0) * (item.qty || 1)), 0);
-    const delivery = order.delivery !== undefined ? order.delivery : (subtotal > 15 ? 0 : 1.500);
-    const total = order.total || (subtotal + delivery);
+    if (allOrders.length === 0) {
+        statsDiv.style.display = 'none';
+        return;
+    }
+    
+    statsDiv.style.display = 'grid';
+    
+    const total = allOrders.length;
+    const pending = allOrders.filter(o => o.status === 'new' || o.status === 'processing').length;
+    const completed = allOrders.filter(o => o.status === 'delivered').length;
+    const totalSpent = allOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+    
+    document.getElementById('totalOrders').textContent = total;
+    document.getElementById('pendingOrders').textContent = pending;
+    document.getElementById('completedOrders').textContent = completed;
+    document.getElementById('totalSpent').textContent = formatKWD(totalSpent);
+}
+
+// عرض الطلبات
+function displayOrders(orders) {
+    const container = document.getElementById('ordersList');
+    
+    if (!orders || orders.length === 0) {
+        container.innerHTML = `
+            <div class="empty-orders">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <path d="M16 10a4 4 0 0 1-8 0"></path>
+                </svg>
+                <h3>لا توجد طلبات سابقة</h3>
+                <p>قم بتسوق أجمل الهدايا الآن</p>
+                <a href="shop.html" class="btn-primary">تسوق الآن</a>
+            </div>
+        `;
+        return;
+    }
     
     const statusMap = {
         'new': 'جديد',
@@ -403,198 +380,74 @@ function displayOrder(order) {
         'cancelled': 'ملغي'
     };
     
-    const statusText = statusMap[order.status] || order.status || 'جديد';
-    
-    const html = `
-        <div class="receipt-header">
-            <div class="receipt-check">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                    <polyline points="20 6 9 17 4 12"/>
-                </svg>
-            </div>
-            <h2>${window.location.search.includes('order=') ? 'تفاصيل الطلب' : 'تم الطلب بنجاح!'}</h2>
-            <p>${window.location.search.includes('order=') ? 'عرض تفاصيل الطلب السابق' : 'شكراً لك، سيتم التواصل معك قريباً للتأكيد'}</p>
-        </div>
-
-        <div class="receipt-number">
-            رقم الطلب: ${order.id || 'غير محدد'}
-        </div>
-
-        <div class="receipt-details">
-            <div class="receipt-row">
-                <span>👤 الاسم</span>
-                <strong>${order.customer.name || 'غير محدد'}</strong>
-            </div>
-            <div class="receipt-row">
-                <span>📞 الهاتف</span>
-                <strong>+965 ${order.customer.phone || 'غير محدد'}</strong>
-            </div>
-            <div class="receipt-row">
-                <span>📍 المنطقة</span>
-                <strong>${order.customer.area || 'غير محدد'}</strong>
-            </div>
-            <div class="receipt-row">
-                <span>🏠 العنوان</span>
-                <strong>${order.customer.address || 'غير محدد'}</strong>
-            </div>
-            <div class="receipt-row">
-                <span>📅 التاريخ والوقت</span>
-                <strong>${order.date || ''} ${order.time || ''}</strong>
-            </div>
-            ${order.customer.notes ? `
-            <div class="receipt-row">
-                <span>📝 ملاحظات</span>
-                <strong>${order.customer.notes}</strong>
-            </div>
-            ` : ''}
-        </div>
-
-        <div class="receipt-items">
-            <div class="receipt-items-title">
-                <span>🛍️</span>
-                <span>المنتجات</span>
-            </div>
-            ${order.items.map(item => `
-                <div class="receipt-item">
-                    <div class="receipt-item-name">
-                        <span class="receipt-item-qty">${item.qty || 1}</span>
-                        <span>${item.name || 'منتج'}</span>
-                    </div>
-                    <span class="receipt-item-price">${window.formatKWD ? window.formatKWD((item.price || 0) * (item.qty || 1)) : ((item.price || 0) * (item.qty || 1)).toFixed(3) + ' د.ك'}</span>
+    container.innerHTML = orders.map(order => {
+        const itemsPreview = order.items?.slice(0, 2) || [];
+        const remainingItems = order.items?.length > 2 ? order.items.length - 2 : 0;
+        
+        return `
+            <div class="order-card" onclick="viewOrder('${order.id}')">
+                <div class="order-header">
+                    <span class="order-id">${order.id}</span>
+                    <span class="order-date">${order.date || ''} ${order.time || ''}</span>
                 </div>
-            `).join('')}
-        </div>
-
-        <div class="receipt-total">
-            <span class="receipt-total-label">الإجمالي النهائي</span>
-            <span class="receipt-total-amount">${window.formatKWD ? window.formatKWD(total) : total.toFixed(3) + ' د.ك'}</span>
-        </div>
-
-        <div class="receipt-payment">
-            <div class="receipt-row">
-                <span>💳 طريقة الدفع</span>
-                <strong>${order.paymentMethod || 'غير محدد'}</strong>
+                
+                <div class="order-items">
+                    ${itemsPreview.map(item => `
+                        <div class="order-item">
+                            <span>${item.name} x${item.qty}</span>
+                            <span>${formatKWD(item.price * item.qty)}</span>
+                        </div>
+                    `).join('')}
+                    ${remainingItems > 0 ? `
+                        <div class="order-item">
+                            <span>...و ${remainingItems} منتجات أخرى</span>
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <div class="order-footer">
+                    <span class="status-badge ${order.status || 'new'}">${statusMap[order.status] || order.status || 'جديد'}</span>
+                    <span class="order-total">${formatKWD(order.total || 0)}</span>
+                </div>
             </div>
-            <div class="receipt-row">
-                <span>🚚 رسوم التوصيل</span>
-                <strong>${delivery === 0 ? 'مجاني' : (window.formatKWD ? window.formatKWD(delivery) : delivery.toFixed(3) + ' د.ك')}</strong>
-            </div>
-        </div>
+        `;
+    }).join('');
+}
 
-        ${order.status ? `
-            <div class="receipt-status">
-                <span class="status-badge ${order.status || 'new'}">${statusText}</span>
-            </div>
-        ` : ''}
-
-        <div class="company-signature">
-            <span class="gold">Gift Star</span> - متجر الهدايا الكويتي الأول<br>
-            <small>نشكرك على ثقتك، ونتطلع لخدمتك دائماً ✨</small>
-        </div>
-
-        <div class="receipt-actions" id="receiptActions">
-            <button class="btn-primary" onclick="generatePDF()">
-                <span style="display:flex; align-items:center; justify-content:center; gap:10px">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="7 10 12 15 17 10"/>
-                        <line x1="12" y1="15" x2="12" y2="3"/>
-                    </svg>
-                    تحميل PDF
-                </span>
-            </button>
-            <a href="index.html" class="btn-outline">العودة للرئيسية</a>
-            <a href="my-orders.html" class="btn-outline">طلباتي</a>
-        </div>
-    `;
+// تصفية الطلبات
+window.filterOrders = (filter) => {
+    currentFilter = filter;
     
-    document.getElementById('receiptContent').innerHTML = html;
-}
-
-function showError(message) {
-    document.getElementById('receiptContent').innerHTML = `
-        <div class="error-container">
-            <svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <circle cx="12" cy="16" r="1" fill="var(--danger)"/>
-            </svg>
-            <h3>عذراً</h3>
-            <p>${message}</p>
-            <div style="display:flex; gap:15px; justify-content:center; margin-top:30px;">
-                <a href="index.html" class="btn-primary">العودة للرئيسية</a>
-                <a href="my-orders.html" class="btn-outline">طلباتي</a>
-            </div>
-        </div>
-    `;
-}
-
-async function generatePDF() {
-    try {
-        const { jsPDF } = window.jspdf;
-        const element = document.getElementById('receiptContent');
-        
-        const actions = document.getElementById('receiptActions');
-        if (actions) actions.style.display = 'none';
-        
-        const canvas = await html2canvas(element, {
-            scale: 2,
-            backgroundColor: '#0f1326',
-            logging: false,
-            allowTaint: true,
-            useCORS: true
-        });
-        
-        if (actions) actions.style.display = 'flex';
-        
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: 'a4'
-        });
-        
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const imgWidth = canvas.width;
-        const imgHeight = canvas.height;
-        const ratio = pdfWidth / imgWidth;
-        const height = imgHeight * ratio;
-        
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, height);
-        
-        const orderIdElement = document.querySelector('.receipt-number');
-        const orderId = orderIdElement ? orderIdElement.textContent.replace('رقم الطلب: ', '').trim() : 'order';
-        
-        pdf.save(`GiftStar-${orderId}.pdf`);
-        
-        if (window.showNotification) {
-            window.showNotification('تم تحميل ملف PDF بنجاح', 'success');
-        }
-    } catch (error) {
-        console.error('خطأ في توليد PDF:', error);
-        if (window.showNotification) {
-            window.showNotification('حدث خطأ أثناء إنشاء ملف PDF', 'error');
-        }
+    document.querySelectorAll('.filter-tab').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.currentTarget.classList.add('active');
+    
+    let filtered = allOrders;
+    if (filter !== 'all') {
+        filtered = allOrders.filter(o => o.status === filter);
     }
+    
+    displayOrders(filtered);
 }
 
-function logout() {
-    if (window.logout) {
-        window.logout();
-    } else {
-        sessionStorage.removeItem('giftstar_user');
-        window.location.href = 'index.html';
-    }
+// عرض تفاصيل الطلب
+window.viewOrder = (orderId) => {
+    window.location.href = `receipt.html?order=${orderId}`;
 }
 
-window.addEventListener('storage', function(e) {
-    if (e.key === 'giftstar_last_order' || e.key === 'giftstar_orders') {
+// تسجيل الخروج
+window.logout = () => {
+    firebaseLogout();
+}
+
+// الاستماع للتحديثات
+window.addEventListener('storage', (e) => {
+    if (e.key === 'giftstar_orders' || e.key === 'giftstar_last_order') {
         console.log('تم تحديث الطلبات، إعادة التحميل...');
-        location.reload();
+        loadUserOrders();
     }
 });
-
-document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
