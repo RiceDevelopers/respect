@@ -190,6 +190,26 @@
   .status-badge.delivered { background: rgba(52,152,219,0.2); color: #3498db; border: 1px solid rgba(52,152,219,0.3); }
   .status-badge.cancelled { background: rgba(224,85,85,0.2); color: #e05555; border: 1px solid rgba(224,85,85,0.3); }
   
+  .loading {
+    text-align: center;
+    padding: 60px;
+    color: var(--text-muted);
+  }
+  
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 20px;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
   @media (max-width: 768px) {
     .orders-stats {
       grid-template-columns: repeat(2, 1fr);
@@ -283,31 +303,92 @@
 
 <div class="stars-bg"></div>
 
-<!-- Firebase SDK -->
-<script type="importmap">
-  {
-    "imports": {
-      "firebase/app": "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js",
-      "firebase/firestore": "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js",
-      "firebase/auth": "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js"
+<script src="js/data.js"></script>
+<script>
+// =========================================
+// دوال مساعدة (في حال لم تعمل data.js)
+// =========================================
+function getCurrentUserLocal() {
+    try {
+        return JSON.parse(sessionStorage.getItem('giftstar_user'));
+    } catch {
+        return null;
     }
-  }
-</script>
+}
 
-<script type="module" src="js/data.js"></script>
-<script type="module">
-import { getCurrentUser, getUserOrders, formatKWD, logout as firebaseLogout, updateHeader } from './js/data.js';
+function formatKWD(amount) {
+    try {
+        return Number(amount || 0).toFixed(3) + ' د.ك';
+    } catch {
+        return '0.000 د.ك';
+    }
+}
 
+function updateCartBadge() {
+    try {
+        const user = getCurrentUserLocal();
+        let cart = [];
+        
+        if (user) {
+            const cartStr = localStorage.getItem('giftstar_cart_' + user.id);
+            cart = cartStr ? JSON.parse(cartStr) : [];
+        } else {
+            const cartStr = localStorage.getItem('giftstar_cart');
+            cart = cartStr ? JSON.parse(cartStr) : [];
+        }
+        
+        const total = cart.reduce((sum, item) => sum + (item.qty || 0), 0);
+        document.querySelectorAll('.cart-count, #cartCount').forEach(el => {
+            if (el) {
+                el.textContent = total;
+                el.style.display = total > 0 ? 'flex' : 'none';
+            }
+        });
+    } catch (e) {
+        console.error('خطأ في تحديث عداد السلة:', e);
+    }
+}
+
+function updateHeader() {
+    const user = getCurrentUserLocal();
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    
+    if (!loginBtn) return;
+    
+    if (user) {
+        loginBtn.style.display = 'none';
+        if (logoutBtn) logoutBtn.style.display = 'inline-block';
+    } else {
+        loginBtn.style.display = 'inline-block';
+        if (logoutBtn) logoutBtn.style.display = 'none';
+    }
+    
+    updateCartBadge();
+}
+
+// =========================================
+// المتغيرات العامة
+// =========================================
 let allOrders = [];
 let currentFilter = 'all';
 
+// =========================================
 // تهيئة الصفحة
-window.addEventListener('DOMContentLoaded', async () => {
+// =========================================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('جاري تحميل صفحة الطلبات...');
+    
     // تحديث الهيدر
-    updateHeader();
+    if (typeof window.updateHeader === 'function') {
+        window.updateHeader();
+    } else {
+        updateHeader();
+    }
     
     // التحقق من تسجيل الدخول
-    const user = getCurrentUser();
+    const user = (typeof window.getCurrentUser === 'function') ? window.getCurrentUser() : getCurrentUserLocal();
+    
     if (!user) {
         sessionStorage.setItem('giftstar_redirect_after_login', 'my-orders.html');
         window.location.href = 'login.html?msg=login_required';
@@ -315,22 +396,52 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
     
     // تحميل الطلبات
-    await loadUserOrders();
+    loadUserOrders();
 });
 
+// =========================================
 // تحميل الطلبات
+// =========================================
 async function loadUserOrders() {
     const container = document.getElementById('ordersList');
     container.innerHTML = '<div class="loading"><div class="spinner"></div>جاري تحميل طلباتك...</div>';
     
-    allOrders = await getUserOrders();
-    console.log('✅ تم العثور على', allOrders.length, 'طلبات');
-    
-    displayStats();
-    displayOrders(allOrders);
+    try {
+        // محاولة استخدام الدوال من data.js
+        if (typeof window.getUserOrders === 'function') {
+            allOrders = await window.getUserOrders();
+        } else {
+            // Fallback: قراءة من localStorage
+            const user = (typeof window.getCurrentUser === 'function') ? window.getCurrentUser() : getCurrentUserLocal();
+            const orders = JSON.parse(localStorage.getItem('giftstar_orders') || '[]');
+            allOrders = orders.filter(o => o.userId === user.id || o.userEmail === user.email);
+        }
+        
+        console.log('✅ تم العثور على', allOrders.length, 'طلبات');
+        
+        displayStats();
+        displayOrders(allOrders);
+        
+    } catch (error) {
+        console.error('❌ خطأ في تحميل الطلبات:', error);
+        container.innerHTML = `
+            <div class="empty-orders">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.5">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <circle cx="12" cy="16" r="1" fill="var(--danger)"/>
+                </svg>
+                <h3 style="color: var(--danger);">عذراً</h3>
+                <p>حدث خطأ في تحميل الطلبات</p>
+                <button onclick="location.reload()" class="btn-primary" style="margin-top: 20px;">إعادة المحاولة</button>
+            </div>
+        `;
+    }
 }
 
+// =========================================
 // عرض الإحصائيات
+// =========================================
 function displayStats() {
     const statsDiv = document.getElementById('ordersStats');
     if (!statsDiv) return;
@@ -350,12 +461,18 @@ function displayStats() {
     document.getElementById('totalOrders').textContent = total;
     document.getElementById('pendingOrders').textContent = pending;
     document.getElementById('completedOrders').textContent = completed;
-    document.getElementById('totalSpent').textContent = formatKWD(totalSpent);
+    
+    // تنسيق المبلغ
+    const formatFunc = (typeof window.formatKWD === 'function') ? window.formatKWD : formatKWD;
+    document.getElementById('totalSpent').textContent = formatFunc(totalSpent);
 }
 
+// =========================================
 // عرض الطلبات
+// =========================================
 function displayOrders(orders) {
     const container = document.getElementById('ordersList');
+    const formatFunc = (typeof window.formatKWD === 'function') ? window.formatKWD : formatKWD;
     
     if (!orders || orders.length === 0) {
         container.innerHTML = `
@@ -395,7 +512,7 @@ function displayOrders(orders) {
                     ${itemsPreview.map(item => `
                         <div class="order-item">
                             <span>${item.name} x${item.qty}</span>
-                            <span>${formatKWD(item.price * item.qty)}</span>
+                            <span>${formatFunc(item.price * item.qty)}</span>
                         </div>
                     `).join('')}
                     ${remainingItems > 0 ? `
@@ -407,15 +524,17 @@ function displayOrders(orders) {
                 
                 <div class="order-footer">
                     <span class="status-badge ${order.status || 'new'}">${statusMap[order.status] || order.status || 'جديد'}</span>
-                    <span class="order-total">${formatKWD(order.total || 0)}</span>
+                    <span class="order-total">${formatFunc(order.total || 0)}</span>
                 </div>
             </div>
         `;
     }).join('');
 }
 
+// =========================================
 // تصفية الطلبات
-window.filterOrders = (filter) => {
+// =========================================
+window.filterOrders = function(filter) {
     currentFilter = filter;
     
     document.querySelectorAll('.filter-tab').forEach(btn => {
@@ -431,22 +550,38 @@ window.filterOrders = (filter) => {
     displayOrders(filtered);
 }
 
+// =========================================
 // عرض تفاصيل الطلب
-window.viewOrder = (orderId) => {
+// =========================================
+window.viewOrder = function(orderId) {
     window.location.href = `receipt.html?order=${orderId}`;
 }
 
+// =========================================
 // تسجيل الخروج
-window.logout = () => {
-    firebaseLogout();
+// =========================================
+window.logout = function() {
+    if (typeof window.logout === 'function' && window.logout !== window.logout) {
+        window.logout();
+    } else {
+        sessionStorage.removeItem('giftstar_user');
+        window.location.href = 'index.html';
+    }
 }
 
-// الاستماع للتحديثات
-window.addEventListener('storage', (e) => {
+// =========================================
+// الاستماع للتحديثات من الصفحات الأخرى
+// =========================================
+window.addEventListener('storage', function(e) {
     if (e.key === 'giftstar_orders' || e.key === 'giftstar_last_order') {
         console.log('تم تحديث الطلبات، إعادة التحميل...');
         loadUserOrders();
     }
+});
+
+window.addEventListener('orderCreated', function() {
+    console.log('تم إنشاء طلب جديد، إعادة التحميل...');
+    loadUserOrders();
 });
 </script>
 </body>
