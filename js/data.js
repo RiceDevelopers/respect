@@ -1,5 +1,5 @@
 // =========================================
-// Gift Star - Data Store (نسخة مستقرة)
+// Gift Star - Data Store (نسخة مستقرة ومحسنة)
 // =========================================
 
 // Default data
@@ -162,7 +162,7 @@ const defaultUsers = [
     role: "admin",
     verified: true,
     createdAt: new Date().toISOString(),
-    phone: "96512345678"
+    phone: "51234567"
   }
 ];
 
@@ -223,7 +223,7 @@ function initData() {
       role: "admin",
       verified: true,
       createdAt: new Date().toISOString(),
-      phone: "96512345678"
+      phone: "51234567"
     });
     setData('users', users);
   }
@@ -237,8 +237,13 @@ function initData() {
 function getCart() { 
   const user = getCurrentUser();
   if (user) {
-    const cart = localStorage.getItem('giftstar_cart_' + user.id);
-    return cart ? JSON.parse(cart) : [];
+    try {
+      const cart = localStorage.getItem('giftstar_cart_' + user.id);
+      return cart ? JSON.parse(cart) : [];
+    } catch (e) {
+      console.error('Error getting user cart:', e);
+      return [];
+    }
   }
   return getData('cart', []); 
 }
@@ -246,7 +251,11 @@ function getCart() {
 function saveCart(cart) { 
   const user = getCurrentUser();
   if (user) {
-    localStorage.setItem('giftstar_cart_' + user.id, JSON.stringify(cart));
+    try {
+      localStorage.setItem('giftstar_cart_' + user.id, JSON.stringify(cart));
+    } catch (e) {
+      console.error('Error saving user cart:', e);
+    }
   } else {
     setData('cart', cart); 
   }
@@ -283,21 +292,34 @@ function removeFromCart(productId) {
 }
 
 function updateCartBadge() {
-  const cart = getCart();
-  const total = cart.reduce((s, i) => s + i.qty, 0);
-  document.querySelectorAll('.cart-count, #cartCount').forEach(el => {
-    if (el) el.textContent = total;
-  });
+  try {
+    const cart = getCart();
+    const total = cart.reduce((s, i) => s + (i.qty || 0), 0);
+    document.querySelectorAll('.cart-count, #cartCount').forEach(el => {
+      if (el) el.textContent = total;
+    });
+  } catch (e) {
+    console.error('Error updating cart badge:', e);
+  }
 }
 
 function getCartTotal() {
-  return getCart().reduce((s, i) => s + (i.price * i.qty), 0);
+  try {
+    return getCart().reduce((s, i) => s + ((i.price || 0) * (i.qty || 0)), 0);
+  } catch (e) {
+    console.error('Error calculating cart total:', e);
+    return 0;
+  }
 }
 
 function clearCart() {
   const user = getCurrentUser();
   if (user) {
-    localStorage.removeItem('giftstar_cart_' + user.id);
+    try {
+      localStorage.removeItem('giftstar_cart_' + user.id);
+    } catch (e) {
+      console.error('Error clearing user cart:', e);
+    }
   } else {
     setData('cart', []);
   }
@@ -459,8 +481,18 @@ function createOrder(orderData) {
   orders.unshift(order);
   setData('orders', orders);
   
-  // Save last order
-  sessionStorage.setItem('giftstar_last_order', JSON.stringify(order));
+  // Save in multiple places for backup
+  try {
+    localStorage.setItem('giftstar_last_order', JSON.stringify(order));
+    sessionStorage.setItem('giftstar_last_order', JSON.stringify(order));
+    
+    // Save in simple localStorage too
+    const simpleOrders = JSON.parse(localStorage.getItem('giftstar_orders') || '[]');
+    simpleOrders.unshift(order);
+    localStorage.setItem('giftstar_orders', JSON.stringify(simpleOrders));
+  } catch (e) {
+    console.error('Error saving order backup:', e);
+  }
   
   // Add order to user
   const users = getData('users', []);
@@ -471,148 +503,212 @@ function createOrder(orderData) {
     setData('users', users);
   }
   
+  console.log('Order created and saved:', order.id);
   return order;
 }
 
 function getUserOrders(userId) {
-  const orders = getData('orders', []);
-  return orders.filter(order => order.userId === userId).sort((a, b) => 
-    new Date(b.lastUpdate) - new Date(a.lastUpdate)
-  );
+  try {
+    const orders = getData('orders', []);
+    return orders.filter(order => order.userId === userId).sort((a, b) => 
+      new Date(b.lastUpdate || 0) - new Date(a.lastUpdate || 0)
+    );
+  } catch (e) {
+    console.error('Error getting user orders:', e);
+    return [];
+  }
 }
 
 function getUserOrdersByEmail(email) {
-  const orders = getData('orders', []);
-  return orders.filter(order => order.userEmail === email).sort((a, b) => 
-    new Date(b.lastUpdate) - new Date(a.lastUpdate)
-  );
+  try {
+    const orders = getData('orders', []);
+    return orders.filter(order => order.userEmail === email).sort((a, b) => 
+      new Date(b.lastUpdate || 0) - new Date(a.lastUpdate || 0)
+    );
+  } catch (e) {
+    console.error('Error getting user orders by email:', e);
+    return [];
+  }
 }
 
 function updateOrderStatus(orderId, newStatus, note = '') {
-  const orders = getData('orders', []);
-  const orderIndex = orders.findIndex(o => o.id === orderId);
-  
-  if (orderIndex === -1) return false;
-  
-  orders[orderIndex].status = newStatus;
-  orders[orderIndex].lastUpdate = new Date().toISOString();
-  
-  if (!orders[orderIndex].statusHistory) {
-    orders[orderIndex].statusHistory = [];
+  try {
+    const orders = getData('orders', []);
+    const orderIndex = orders.findIndex(o => o.id === orderId);
+    
+    if (orderIndex === -1) return false;
+    
+    orders[orderIndex].status = newStatus;
+    orders[orderIndex].lastUpdate = new Date().toISOString();
+    
+    if (!orders[orderIndex].statusHistory) {
+      orders[orderIndex].statusHistory = [];
+    }
+    
+    orders[orderIndex].statusHistory.push({
+      status: newStatus,
+      date: new Date().toISOString(),
+      note: note
+    });
+    
+    setData('orders', orders);
+    return true;
+  } catch (e) {
+    console.error('Error updating order status:', e);
+    return false;
   }
-  
-  orders[orderIndex].statusHistory.push({
-    status: newStatus,
-    date: new Date().toISOString(),
-    note: note
-  });
-  
-  setData('orders', orders);
-  return true;
 }
 
 // =========================================
 // Products
 // =========================================
 function getProducts(filters = {}) {
-  let products = getData('products', defaultProducts);
-  
-  if (filters.category && filters.category !== 'all') {
-    products = products.filter(p => p.category === filters.category);
+  try {
+    let products = getData('products', defaultProducts);
+    
+    if (filters.category && filters.category !== 'all') {
+      products = products.filter(p => p.category === filters.category);
+    }
+    
+    if (filters.minPrice !== undefined) {
+      products = products.filter(p => p.price >= filters.minPrice);
+    }
+    
+    if (filters.maxPrice !== undefined) {
+      products = products.filter(p => p.price <= filters.maxPrice);
+    }
+    
+    if (filters.featured) {
+      products = products.filter(p => p.featured);
+    }
+    
+    if (filters.active !== undefined) {
+      products = products.filter(p => p.active === filters.active);
+    }
+    
+    return products;
+  } catch (e) {
+    console.error('Error getting products:', e);
+    return [];
   }
-  
-  if (filters.minPrice !== undefined) {
-    products = products.filter(p => p.price >= filters.minPrice);
-  }
-  
-  if (filters.maxPrice !== undefined) {
-    products = products.filter(p => p.price <= filters.maxPrice);
-  }
-  
-  if (filters.featured) {
-    products = products.filter(p => p.featured);
-  }
-  
-  if (filters.active !== undefined) {
-    products = products.filter(p => p.active === filters.active);
-  }
-  
-  return products;
 }
 
 function getProductById(id) {
-  const products = getData('products', defaultProducts);
-  return products.find(p => p.id === id);
+  try {
+    const products = getData('products', defaultProducts);
+    return products.find(p => p.id === id);
+  } catch (e) {
+    console.error('Error getting product by id:', e);
+    return null;
+  }
 }
 
 function addProduct(product) {
-  const products = getData('products', defaultProducts);
-  product.id = Date.now();
-  product.createdAt = new Date().toISOString();
-  products.push(product);
-  setData('products', products);
-  return { success: true, id: product.id };
+  try {
+    const products = getData('products', defaultProducts);
+    product.id = Date.now();
+    product.createdAt = new Date().toISOString();
+    products.push(product);
+    setData('products', products);
+    return { success: true, id: product.id };
+  } catch (e) {
+    console.error('Error adding product:', e);
+    return { success: false, error: e.message };
+  }
 }
 
 function updateProduct(product) {
-  const products = getData('products', defaultProducts);
-  const index = products.findIndex(p => p.id === product.id);
-  if (index !== -1) {
-    products[index] = { ...products[index], ...product, updatedAt: new Date().toISOString() };
-    setData('products', products);
-    return { success: true };
+  try {
+    const products = getData('products', defaultProducts);
+    const index = products.findIndex(p => p.id === product.id);
+    if (index !== -1) {
+      products[index] = { ...products[index], ...product, updatedAt: new Date().toISOString() };
+      setData('products', products);
+      return { success: true };
+    }
+    return { success: false, error: 'Product not found' };
+  } catch (e) {
+    console.error('Error updating product:', e);
+    return { success: false, error: e.message };
   }
-  return { success: false, error: 'Product not found' };
 }
 
 function deleteProduct(productId) {
-  const products = getData('products', defaultProducts);
-  const filtered = products.filter(p => p.id !== productId);
-  setData('products', filtered);
-  return { success: true };
+  try {
+    const products = getData('products', defaultProducts);
+    const filtered = products.filter(p => p.id !== productId);
+    setData('products', filtered);
+    return { success: true };
+  } catch (e) {
+    console.error('Error deleting product:', e);
+    return { success: false, error: e.message };
+  }
 }
 
 // =========================================
 // Dashboard Stats
 // =========================================
 function getDashboardStats() {
-  const orders = getData('orders', []);
-  const products = getData('products', defaultProducts);
-  const users = getData('users', []);
-  
-  const today = new Date().toLocaleDateString('ar-KW');
-  const todayOrders = orders.filter(o => o.date === today);
-  
-  const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
-  const todayRevenue = todayOrders.reduce((sum, order) => sum + (order.total || 0), 0);
-  
-  return {
-    totalOrders: orders.length,
-    todayOrders: todayOrders.length,
-    totalProducts: products.filter(p => p.active).length,
-    totalUsers: users.filter(u => u.role === 'customer').length,
-    totalRevenue,
-    todayRevenue,
-    averageOrderValue: orders.length ? (totalRevenue / orders.length).toFixed(3) : 0
-  };
+  try {
+    const orders = getData('orders', []);
+    const products = getData('products', defaultProducts);
+    const users = getData('users', []);
+    
+    const today = new Date().toLocaleDateString('ar-KW');
+    const todayOrders = orders.filter(o => o.date === today);
+    
+    const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+    const todayRevenue = todayOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+    
+    return {
+      totalOrders: orders.length,
+      todayOrders: todayOrders.length,
+      totalProducts: products.filter(p => p.active).length,
+      totalUsers: users.filter(u => u.role === 'customer').length,
+      totalRevenue,
+      todayRevenue,
+      averageOrderValue: orders.length ? (totalRevenue / orders.length).toFixed(3) : 0
+    };
+  } catch (e) {
+    console.error('Error getting dashboard stats:', e);
+    return {
+      totalOrders: 0,
+      todayOrders: 0,
+      totalProducts: 0,
+      totalUsers: 0,
+      totalRevenue: 0,
+      todayRevenue: 0,
+      averageOrderValue: 0
+    };
+  }
 }
 
 // =========================================
 // Format currency
 // =========================================
 function formatKWD(amount) {
-  return Number(amount).toFixed(3) + ' د.ك';
+  try {
+    return Number(amount || 0).toFixed(3) + ' د.ك';
+  } catch (e) {
+    console.error('Error formatting currency:', e);
+    return '0.000 د.ك';
+  }
 }
 
 // =========================================
 // Notification helper
 // =========================================
 function showNotification(msg, type = 'success') {
-  const el = document.createElement('div');
-  el.className = 'notification ' + type;
-  el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
+  try {
+    const el = document.createElement('div');
+    el.className = 'notification ' + type;
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+  } catch (e) {
+    console.error('Error showing notification:', e);
+    alert(msg);
+  }
 }
 
 // =========================================
