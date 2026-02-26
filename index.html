@@ -183,147 +183,122 @@
 
 <div class="stars-bg"></div>
 
-<!-- Firebase SDK -->
-<script type="importmap">
-  {
-    "imports": {
-      "firebase/app": "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js",
-      "firebase/firestore": "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js",
-      "firebase/auth": "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js",
-      "firebase/analytics": "https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js"
-    }
-  }
-</script>
-
-<script type="module" src="js/data.js"></script>
-<script type="module">
-import { getCurrentUser, getProducts, getPromos, addToCart, logout as firebaseLogout, updateHeader } from './js/data.js';
-
-// تهيئة الصفحة
-window.addEventListener('DOMContentLoaded', async () => {
-  // تحديث الهيدر
-  updateHeader();
-  
-  // عرض العروض
-  renderPromos();
+<script src="js/data.js"></script>
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+  if (window.updateHeader) window.updateHeader();
   
   // عرض المنتجات المميزة
-  renderFeaturedProducts();
-});
-
-// عرض العروض
-async function renderPromos() {
-  const container = document.getElementById('promoGrid');
-  if (!container) return;
-
-  const promos = getPromos();
-  
-  if (!promos.length) {
-    document.querySelector('.promo-section').style.display = 'none';
-    return;
-  }
-
-  container.innerHTML = promos.map(p => `
-    <div class="promo-card">
-      <img src="${p.image}" alt="${p.title}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=600&h=300&fit=crop'">
-      <div class="promo-overlay">
-        <span class="promo-badge">${p.badge || 'عرض'}</span>
-        <h3>${p.title}</h3>
-        <p>${p.description}</p>
-      </div>
-    </div>
-  `).join('');
-}
-
-// عرض المنتجات المميزة
-async function renderFeaturedProducts() {
+  const products = window.getProducts ? window.getProducts({ featured: true, active: true }) : [];
   const container = document.getElementById('featuredProducts');
-  if (!container) return;
-
-  const products = getProducts({ featured: true, active: true }).slice(0, 8);
-  
-  if (!products.length) {
-    container.innerHTML = '<div class="loading" style="grid-column:1/-1">لا توجد منتجات</div>';
-    return;
-  }
-
-  container.innerHTML = products.map(p => productCardHTML(p)).join('');
-}
-
-// قالب بطاقة المنتج
-function productCardHTML(p) {
-  return `
-    <div class="product-card" onclick="window.location.href='product.html?id=${p.id}'" style="cursor:pointer">
-      ${p.badge ? `<span class="product-badge">${p.badge}</span>` : ''}
-      <img src="${p.image}" alt="${p.name}" class="product-img" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=400&h=300&fit=crop'">
-      <div class="product-info">
-        <h3 class="product-name">${p.name}</h3>
-        <p class="product-desc">${p.description.substring(0, 60)}...</p>
-        <div class="product-footer">
-          <div class="product-price">${formatPrice(p.price)}</div>
-          <button class="btn-add-cart" onclick="event.stopPropagation();window.handleAddToCart(${p.id}, this)">أضف للسلة</button>
+  if (container && products.length) {
+    container.innerHTML = products.map(p => `
+      <div class="product-card" onclick="window.location.href='product.html?id=${p.id}'">
+        ${p.badge ? `<span class="product-badge">${p.badge}</span>` : ''}
+        <img src="${p.image}" alt="${p.name}" class="product-img" loading="lazy">
+        <div class="product-info">
+          <h3 class="product-name">${p.name}</h3>
+          <p class="product-desc">${p.description.substring(0, 60)}...</p>
+          <div class="product-footer">
+            <div class="product-price">${window.formatKWD ? window.formatKWD(p.price) : p.price.toFixed(3) + ' د.ك'}</div>
+            <button class="btn-add-cart" onclick="event.stopPropagation();handleAddToCart(${p.id}, this)">أضف للسلة</button>
+          </div>
         </div>
       </div>
-    </div>
-  `;
-}
-
-// تنسيق السعر
-function formatPrice(price) {
-  return price.toFixed(3) + ' د.ك';
-}
-
-// إضافة للسلة
-window.handleAddToCart = async (productId, btn) => {
-  const user = getCurrentUser();
+    `).join('');
+  }
   
-  if (!user) {
+  // عرض العروض
+  const promos = window.getPromos ? window.getPromos() : [];
+  const promoGrid = document.getElementById('promoGrid');
+  if (promoGrid && promos.length) {
+    promoGrid.innerHTML = promos.map(p => `
+      <div class="promo-card">
+        <img src="${p.image}" alt="${p.title}" loading="lazy">
+        <div class="promo-overlay">
+          <span class="promo-badge">${p.badge || 'عرض'}</span>
+          <h3>${p.title}</h3>
+          <p>${p.description}</p>
+        </div>
+      </div>
+    `).join('');
+  }
+});
+
+window.handleAddToCart = (productId, btn) => {
+  if (!window.getCurrentUser || !window.getCurrentUser()) {
     sessionStorage.setItem('giftstar_redirect_after_login', window.location.href);
     window.location.href = 'login.html?msg=login_required';
     return;
   }
   
-  const result = addToCart(productId);
-  
-  btn.textContent = '✓ تمت الإضافة';
-  btn.style.background = 'var(--success)';
-  
-  setTimeout(() => {
-    btn.textContent = 'أضف للسلة';
-    btn.style.background = '';
-  }, 1500);
-  
-  showNotification('تمت إضافة المنتج للسلة', 'success');
+  if (window.addToCart) {
+    window.addToCart(productId);
+    btn.textContent = '✓ تمت الإضافة';
+    btn.style.background = 'var(--success)';
+    setTimeout(() => {
+      btn.textContent = 'أضف للسلة';
+      btn.style.background = '';
+    }, 1500);
+  }
 }
 
-// إشعارات
-function showNotification(msg, type) {
-  const el = document.createElement('div');
-  el.className = 'notification ' + (type || 'success');
-  el.textContent = msg;
-  el.style.cssText = `
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: ${type === 'success' ? '#5ec98a' : '#e05555'};
-    color: white;
-    padding: 12px 30px;
-    border-radius: 50px;
-    font-size: 14px;
-    font-weight: 600;
-    z-index: 10000;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-    animation: slideDown 0.3s ease;
-  `;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
-}
-
-// تسجيل الخروج
 window.logout = () => {
-  firebaseLogout();
+  if (window.logout) window.logout();
+}
+</script>
+
+<!-- ========================================= -->
+<!-- كود Firebase - يضاف في نهاية كل صفحة -->
+<!-- ========================================= -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { 
+  getFirestore,
+  collection,
+  addDoc,
+  onSnapshot,
+  doc,
+  updateDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCtHnYZT8yq9tp7xaA7AyJQV4Ag4Wi1Yks",
+  authDomain: "gift-star-abf48.firebaseapp.com",
+  projectId: "gift-star-abf48",
+  storageBucket: "gift-star-abf48.firebasestorage.app",
+  messagingSenderId: "546782076914",
+  appId: "1:546782076914:web:3fb957a03c7e0501fc556b"
 };
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+window.db = db;
+window.fb = {
+  collection,
+  addDoc,
+  onSnapshot,
+  doc,
+  updateDoc,
+  serverTimestamp
+};
+
+console.log('✅ Firebase loaded in index.html');
+</script>
+
+<!-- Firebase Messaging -->
+<script>
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/firebase-messaging-sw.js')
+        .then((registration) => {
+            console.log('✅ Service Worker registered:', registration);
+        })
+        .catch((error) => {
+            console.error('❌ Service Worker registration failed:', error);
+        });
+}
 </script>
 </body>
 </html>
