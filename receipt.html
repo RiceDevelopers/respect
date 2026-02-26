@@ -24,12 +24,24 @@
         <a href="shop.html">المتجر</a>
         <a href="my-orders.html">طلباتي</a>
       </nav>
+      <div class="header-links">
+        <a href="cart.html" class="cart-link">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="9" cy="21" r="1"/>
+            <circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          </svg>
+          <span class="cart-count" id="cartCount">0</span>
+        </a>
+        <a href="login.html" class="btn-login" id="loginBtn">تسجيل الدخول</a>
+        <a href="#" class="btn-login" id="logoutBtn" style="display:none" onclick="logout()">خروج</a>
+      </div>
     </div>
   </div>
 </header>
 
 <div class="receipt-page">
-  <div class="receipt-card" id="receiptCard">
+  <div class="receipt-card">
     <div class="receipt-header">
       <div class="receipt-check">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
@@ -40,16 +52,11 @@
       <p id="receiptSubtitle">شكراً لك، سيتم التواصل معك قريباً للتأكيد</p>
     </div>
 
-    <div class="receipt-number" id="receiptNum">رقم الطلب: GS...</div>
-
-    <div id="receiptDetails" class="receipt-details"></div>
-
+    <div class="receipt-number" id="receiptNum"></div>
+    <div class="receipt-details" id="receiptDetails"></div>
     <div class="receipt-items" id="receiptItems"></div>
-
     <div class="receipt-total" id="receiptTotal"></div>
-
     <div class="receipt-payment" id="receiptPayment"></div>
-    
     <div class="receipt-status" id="receiptStatus"></div>
 
     <div class="receipt-actions" id="receiptActions">
@@ -67,6 +74,9 @@
 // تهيئة الصفحة
 async function init() {
   try {
+    // تحديث عداد السلة
+    updateCartCount();
+    
     // التحقق من وجود orderId في الرابط
     const urlParams = new URLSearchParams(window.location.search);
     const orderId = urlParams.get('order');
@@ -79,7 +89,6 @@ async function init() {
       order = orders.find(o => o.id === orderId);
       
       if (order) {
-        // تحديث العنوان
         document.getElementById('receiptTitle').textContent = 'تفاصيل الطلب';
         document.getElementById('receiptSubtitle').textContent = 'عرض تفاصيل الطلب السابق';
       }
@@ -174,12 +183,10 @@ function displayOrder(order) {
       'cancelled': 'ملغي'
     }[order.status] || order.status;
     
-    const statusClass = order.status || 'new';
-    
     document.getElementById('receiptStatus').innerHTML = `
       <div class="receipt-row" style="margin-top: 16px; padding-top: 16px; border-top: 2px solid var(--border);">
         <span>📊 حالة الطلب</span>
-        <span class="status-badge ${statusClass}">${statusText}</span>
+        <span class="status-badge ${order.status}">${statusText}</span>
       </div>
     `;
   }
@@ -223,7 +230,7 @@ function printPDF() {
     
     // العنوان الرئيسي
     doc.setFontSize(24);
-    doc.setTextColor(200, 169, 110); // لون ذهبي
+    doc.setTextColor(200, 169, 110);
     doc.text('Gift Star', 105, 25, { align: 'center' });
     
     doc.setFontSize(12);
@@ -273,7 +280,6 @@ function printPDF() {
       doc.text(formatKWD(itemTotal), 170, y, { align: 'right' });
       y += 8;
       
-      // إذا تجاوزنا الصفحة، نضيف صفحة جديدة
       if (y > 270) {
         doc.addPage();
         y = 20;
@@ -347,134 +353,13 @@ function updateCartCount() {
   });
 }
 
+// تسجيل الخروج
+function logout() {
+  giftstar.logout();
+}
+
 // تشغيل التهيئة
-document.addEventListener('DOMContentLoaded', () => {
-  init();
-  updateCartCount();
-});
+document.addEventListener('DOMContentLoaded', init);
 </script>
-
-<style>
-/* أنماط إضافية للإيصال */
-.receipt-details {
-  margin-bottom: 20px;
-}
-
-.receipt-items {
-  margin: 20px 0;
-  padding: 20px 0;
-  border-top: 2px dashed var(--border);
-  border-bottom: 2px dashed var(--border);
-}
-
-.receipt-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-  color: var(--text-muted);
-}
-
-.receipt-row strong {
-  color: var(--text);
-  font-weight: 700;
-}
-
-.receipt-total {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 0;
-  font-size: 22px;
-  font-weight: 900;
-  color: var(--primary);
-  border-top: 2px solid var(--border);
-  margin-top: 10px;
-}
-
-.total-amount {
-  font-size: 24px;
-  color: var(--primary);
-}
-
-.receipt-payment {
-  margin: 15px 0;
-  padding: 15px 0;
-  border-top: 1px solid var(--border);
-}
-
-.receipt-status {
-  margin: 15px 0 25px;
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 6px 18px;
-  border-radius: 25px;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.status-badge.new {
-  background: rgba(94,201,138,0.2);
-  color: #5ec98a;
-  border: 1px solid rgba(94,201,138,0.3);
-}
-
-.status-badge.processing {
-  background: rgba(243,156,18,0.2);
-  color: #f39c12;
-  border: 1px solid rgba(243,156,18,0.3);
-}
-
-.status-badge.delivered {
-  background: rgba(52,152,219,0.2);
-  color: #3498db;
-  border: 1px solid rgba(52,152,219,0.3);
-}
-
-.status-badge.cancelled {
-  background: rgba(224,85,85,0.2);
-  color: #e05555;
-  border: 1px solid rgba(224,85,85,0.3);
-}
-
-.receipt-actions {
-  display: flex;
-  gap: 15px;
-  margin-top: 35px;
-}
-
-.receipt-actions .btn-primary,
-.receipt-actions .btn-outline {
-  flex: 1;
-  text-align: center;
-  padding: 14px;
-  font-size: 15px;
-}
-
-@media print {
-  .site-header,
-  .receipt-actions,
-  .stars-bg {
-    display: none !important;
-  }
-  
-  .receipt-card {
-    box-shadow: none;
-    border: 1px solid #ddd;
-  }
-}
-
-@media (max-width: 768px) {
-  .receipt-actions {
-    flex-direction: column;
-  }
-  
-  .receipt-actions .btn-primary,
-  .receipt-actions .btn-outline {
-    width: 100%;
-  }
-}
-</style>
 </body>
 </html>
