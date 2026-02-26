@@ -14,8 +14,16 @@
     <div class="container header-flex">
       <a href="index.html" class="logo">
         <div class="logo-star">★</div>
-        <div class="logo-text"><span class="logo-gift">Gift</span><span class="logo-star-word">Star</span></div>
+        <div class="logo-text">
+          <span class="logo-gift">Gift</span>
+          <span class="logo-star-word">Star</span>
+        </div>
       </a>
+      <nav class="main-nav">
+        <a href="index.html">الرئيسية</a>
+        <a href="shop.html">المتجر</a>
+        <a href="my-orders.html">طلباتي</a>
+      </nav>
     </div>
   </div>
 </header>
@@ -24,157 +32,449 @@
   <div class="receipt-card" id="receiptCard">
     <div class="receipt-header">
       <div class="receipt-check">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
       </div>
-      <h2>تم الطلب بنجاح!</h2>
-      <p>شكراً لك، سيتم التواصل معك قريباً للتأكيد</p>
+      <h2 id="receiptTitle">تم الطلب بنجاح!</h2>
+      <p id="receiptSubtitle">شكراً لك، سيتم التواصل معك قريباً للتأكيد</p>
     </div>
 
     <div class="receipt-number" id="receiptNum">رقم الطلب: GS...</div>
 
-    <div id="receiptDetails"></div>
+    <div id="receiptDetails" class="receipt-details"></div>
 
-    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
-      <div id="receiptItems"></div>
-    </div>
+    <div class="receipt-items" id="receiptItems"></div>
 
     <div class="receipt-total" id="receiptTotal"></div>
 
-    <div id="receiptPayment" style="margin-top:12px;font-size:14px;color:var(--text-muted)"></div>
+    <div class="receipt-payment" id="receiptPayment"></div>
+    
+    <div class="receipt-status" id="receiptStatus"></div>
 
     <div class="receipt-actions" id="receiptActions">
-      <button class="btn-primary" onclick="printPDF()">طباعة PDF</button>
-      <a href="index.html" class="btn-outline">العودة للرئيسية</a>
+      <button class="btn-primary" onclick="printPDF()">📄 طباعة PDF</button>
+      <a href="index.html" class="btn-outline">🏠 العودة للرئيسية</a>
+      <a href="my-orders.html" class="btn-outline">📋 جميع الطلبات</a>
     </div>
   </div>
 </div>
 
+<div class="stars-bg"></div>
+
 <script src="js/data.js"></script>
 <script>
-
-  // تعديل دالة init في receipt.html
+// تهيئة الصفحة
 async function init() {
-  // التحقق من وجود orderId في الرابط
-  const urlParams = new URLSearchParams(window.location.search);
-  const orderId = urlParams.get('order');
-  
-  let order;
-  
-  if (orderId) {
-    // جلب الطلب من قاعدة البيانات
-    const orders = await giftstar.getData('orders') || [];
-    order = orders.find(o => o.id === orderId);
-  } else {
-    // جلب آخر طلب من session
-    order = JSON.parse(sessionStorage.getItem('giftstar_last_order') || 'null');
-  }
-  
-  if (!order) {
-    window.location.href = 'index.html';
-    return;
-  }
+  try {
+    // التحقق من وجود orderId في الرابط
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderId = urlParams.get('order');
+    
+    let order;
+    
+    if (orderId) {
+      // جلب الطلب من قاعدة البيانات
+      const orders = await giftstar.getData('orders') || [];
+      order = orders.find(o => o.id === orderId);
+      
+      if (order) {
+        // تحديث العنوان
+        document.getElementById('receiptTitle').textContent = 'تفاصيل الطلب';
+        document.getElementById('receiptSubtitle').textContent = 'عرض تفاصيل الطلب السابق';
+      }
+    } else {
+      // جلب آخر طلب من session
+      order = JSON.parse(sessionStorage.getItem('giftstar_last_order') || 'null');
+    }
+    
+    if (!order) {
+      showError('لم يتم العثور على الطلب');
+      return;
+    }
 
+    // عرض معلومات الطلب
+    displayOrder(order);
+    
+  } catch (error) {
+    console.error('Error loading order:', error);
+    showError('حدث خطأ أثناء تحميل الطلب');
+  }
 }
-  
-function init() {
-  const order = JSON.parse(sessionStorage.getItem('giftstar_last_order') || 'null');
-  if (!order) { window.location.href = 'index.html'; return; }
 
-  document.getElementById('receiptNum').textContent = 'رقم الطلب: ' + order.id;
-
-  document.getElementById('receiptDetails').innerHTML = `
-    <div class="receipt-row"><span>الاسم</span><strong>${order.customer.name}</strong></div>
-    <div class="receipt-row"><span>الهاتف</span><strong>${order.customer.phone}</strong></div>
-    <div class="receipt-row"><span>المنطقة</span><strong>${order.customer.area}</strong></div>
-    <div class="receipt-row"><span>العنوان</span><strong>${order.customer.address}</strong></div>
-    <div class="receipt-row"><span>التاريخ</span><strong>${order.date} - ${order.time}</strong></div>
+// عرض الطلب
+function displayOrder(order) {
+  // رقم الطلب
+  document.getElementById('receiptNum').innerHTML = `
+    <div class="receipt-row">
+      <span>رقم الطلب</span>
+      <strong>${order.id}</strong>
+    </div>
   `;
 
-  document.getElementById('receiptItems').innerHTML = order.items.map(i => `
+  // تفاصيل العميل
+  const customer = order.customer || {};
+  document.getElementById('receiptDetails').innerHTML = `
     <div class="receipt-row">
-      <span>${i.name} x${i.qty}</span>
-      <strong>${(i.price * i.qty).toFixed(3)} د.ك</strong>
+      <span>👤 الاسم</span>
+      <strong>${customer.name || 'غير محدد'}</strong>
+    </div>
+    <div class="receipt-row">
+      <span>📞 الهاتف</span>
+      <strong>${customer.phone || 'غير محدد'}</strong>
+    </div>
+    <div class="receipt-row">
+      <span>📍 المنطقة</span>
+      <strong>${customer.area || 'غير محدد'}</strong>
+    </div>
+    <div class="receipt-row">
+      <span>🏠 العنوان</span>
+      <strong>${customer.address || 'غير محدد'}</strong>
+    </div>
+    <div class="receipt-row">
+      <span>📅 التاريخ</span>
+      <strong>${order.date || ''} - ${order.time || ''}</strong>
+    </div>
+  `;
+
+  // المنتجات
+  const items = order.items || [];
+  document.getElementById('receiptItems').innerHTML = items.map(item => `
+    <div class="receipt-row">
+      <span>${item.name} <small>(x${item.qty})</small></span>
+      <strong>${formatKWD(item.price * item.qty)}</strong>
     </div>
   `).join('') + `
-    <div class="receipt-row"><span>التوصيل</span><strong>${order.delivery === 0 ? 'مجاني' : order.delivery.toFixed(3) + ' د.ك'}</strong></div>
+    <div class="receipt-row" style="border-top: 1px dashed var(--border); margin-top: 8px; padding-top: 8px;">
+      <span>🚚 التوصيل</span>
+      <strong>${order.delivery === 0 ? 'مجاني' : formatKWD(order.delivery || 0)}</strong>
+    </div>
   `;
 
+  // المجموع
   document.getElementById('receiptTotal').innerHTML = `
-    <span>الإجمالي</span><span>${order.total.toFixed(3)} د.ك</span>
+    <span>الإجمالي النهائي</span>
+    <span class="total-amount">${formatKWD(order.total || 0)}</span>
   `;
 
-  document.getElementById('receiptPayment').textContent = 'طريقة الدفع: ' + order.paymentMethod;
+  // طريقة الدفع
+  document.getElementById('receiptPayment').innerHTML = `
+    <div class="receipt-row">
+      <span>💳 طريقة الدفع</span>
+      <strong>${order.paymentMethod || 'غير محدد'}</strong>
+    </div>
+  `;
+
+  // حالة الطلب
+  if (order.status) {
+    const statusText = {
+      'new': 'جديد',
+      'processing': 'قيد المعالجة',
+      'delivered': 'تم التوصيل',
+      'cancelled': 'ملغي'
+    }[order.status] || order.status;
+    
+    const statusClass = order.status || 'new';
+    
+    document.getElementById('receiptStatus').innerHTML = `
+      <div class="receipt-row" style="margin-top: 16px; padding-top: 16px; border-top: 2px solid var(--border);">
+        <span>📊 حالة الطلب</span>
+        <span class="status-badge ${statusClass}">${statusText}</span>
+      </div>
+    `;
+  }
+
+  // إذا كان الطلب من العرض المباشر (ليس من السجل)، نخفي بعض الأزرار
+  if (!orderId) {
+    const actions = document.getElementById('receiptActions');
+    actions.innerHTML = `
+      <button class="btn-primary" onclick="printPDF()">📄 طباعة PDF</button>
+      <a href="index.html" class="btn-outline">🏠 العودة للرئيسية</a>
+    `;
+  }
 }
 
+// تنسيق العملة
+function formatKWD(amount) {
+  return Number(amount).toFixed(3) + ' د.ك';
+}
+
+// طباعة PDF
 function printPDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const order = JSON.parse(sessionStorage.getItem('giftstar_last_order'));
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ 
+      orientation: 'portrait', 
+      unit: 'mm', 
+      format: 'a4' 
+    });
+    
+    // جلب الطلب من الصفحة
+    const orderId = document.querySelector('#receiptNum strong')?.textContent || '';
+    const order = JSON.parse(sessionStorage.getItem('giftstar_last_order') || 'null');
+    
+    if (!order) {
+      alert('لا يوجد طلب للطباعة');
+      return;
+    }
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(22);
-  doc.text('Gift Star', 105, 25, { align: 'center' });
-  doc.setFontSize(12);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Kuwait Gift Store - giftstar.com.kw', 105, 33, { align: 'center' });
+    // إعدادات الخط
+    doc.setFont('helvetica', 'bold');
+    
+    // العنوان الرئيسي
+    doc.setFontSize(24);
+    doc.setTextColor(200, 169, 110); // لون ذهبي
+    doc.text('Gift Star', 105, 25, { align: 'center' });
+    
+    doc.setFontSize(12);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Kuwait Gift Store', 105, 33, { align: 'center' });
+    
+    // خط فاصل
+    doc.setDrawColor(200, 169, 110);
+    doc.setLineWidth(0.5);
+    doc.line(20, 38, 190, 38);
 
-  doc.setLineWidth(0.5);
-  doc.line(20, 38, 190, 38);
+    // معلومات الطلب
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Order Receipt', 20, 48);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    doc.text('Order ID: ' + order.id, 20, 56);
+    doc.text('Date: ' + order.date + ' ' + order.time, 20, 63);
 
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Order Receipt', 20, 48);
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(11);
-  doc.text('Order ID: ' + order.id, 20, 56);
-  doc.text('Date: ' + order.date + ' ' + order.time, 20, 63);
+    // معلومات العميل
+    doc.line(20, 68, 190, 68);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Customer Information:', 20, 76);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Name: ' + (order.customer?.name || 'N/A'), 20, 84);
+    doc.text('Phone: ' + (order.customer?.phone || 'N/A'), 20, 91);
+    doc.text('Area: ' + (order.customer?.area || 'N/A'), 20, 98);
+    doc.text('Address: ' + (order.customer?.address || 'N/A'), 20, 105);
 
-  doc.line(20, 68, 190, 68);
+    // المنتجات
+    doc.line(20, 110, 190, 110);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Order Items:', 20, 118);
+    doc.setFont('helvetica', 'normal');
 
-  doc.setFont('helvetica', 'bold');
-  doc.text('Delivery Info:', 20, 76);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Name: ' + order.customer.name, 20, 84);
-  doc.text('Phone: ' + order.customer.phone, 20, 91);
-  doc.text('Area: ' + order.customer.area, 20, 98);
-  doc.text('Address: ' + order.customer.address, 20, 105);
+    let y = 126;
+    let subtotal = 0;
+    
+    (order.items || []).forEach(item => {
+      const itemTotal = item.price * item.qty;
+      subtotal += itemTotal;
+      
+      doc.text(item.name + ' x' + item.qty, 20, y);
+      doc.text(formatKWD(itemTotal), 170, y, { align: 'right' });
+      y += 8;
+      
+      // إذا تجاوزنا الصفحة، نضيف صفحة جديدة
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+      }
+    });
 
-  doc.line(20, 110, 190, 110);
-
-  doc.setFont('helvetica', 'bold');
-  doc.text('Items:', 20, 118);
-  doc.setFont('helvetica', 'normal');
-
-  let y = 126;
-  order.items.forEach(item => {
-    doc.text(item.name + ' x' + item.qty, 20, y);
-    doc.text(item.price.toFixed(3) + ' KD x' + item.qty + ' = ' + (item.price * item.qty).toFixed(3) + ' KD', 130, y);
+    // المجموع
+    doc.line(20, y + 2, 190, y + 2);
     y += 8;
-  });
+    
+    doc.text('Subtotal:', 20, y);
+    doc.text(formatKWD(subtotal), 170, y, { align: 'right' });
+    
+    y += 8;
+    doc.text('Delivery:', 20, y);
+    doc.text(order.delivery === 0 ? 'Free' : formatKWD(order.delivery), 170, y, { align: 'right' });
+    
+    y += 8;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text('TOTAL:', 20, y);
+    doc.text(formatKWD(order.total || 0), 170, y, { align: 'right' });
 
-  doc.line(20, y + 2, 190, y + 2);
-  doc.text('Subtotal:', 20, y + 10);
-  doc.text(order.subtotal.toFixed(3) + ' KD', 170, y + 10, { align: 'right' });
-  doc.text('Delivery:', 20, y + 18);
-  doc.text(order.delivery === 0 ? 'Free' : order.delivery.toFixed(3) + ' KD', 170, y + 18, { align: 'right' });
+    // طريقة الدفع
+    y += 10;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text('Payment Method: ' + (order.paymentMethod || 'N/A'), 20, y);
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
-  doc.text('TOTAL:', 20, y + 28);
-  doc.text(order.total.toFixed(3) + ' KD', 170, y + 28, { align: 'right' });
+    // تذييل
+    y += 15;
+    doc.line(20, y, 190, y);
+    y += 8;
+    doc.setFontSize(10);
+    doc.setTextColor(150, 150, 150);
+    doc.text('Thank you for shopping at Gift Star', 105, y, { align: 'center' });
+    doc.text('www.giftstar.com.kw', 105, y + 6, { align: 'center' });
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.text('Payment Method: ' + order.paymentMethod, 20, y + 38);
-
-  doc.line(20, y + 44, 190, y + 44);
-  doc.setFontSize(10);
-  doc.text('Thank you for shopping at Gift Star - Kuwait', 105, y + 52, { align: 'center' });
-
-  doc.save('GiftStar-Receipt-' + order.id + '.pdf');
+    // حفظ الملف
+    doc.save('GiftStar-Receipt-' + order.id + '.pdf');
+    
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    alert('حدث خطأ أثناء إنشاء ملف PDF');
+  }
 }
 
-init();
+// عرض خطأ
+function showError(message) {
+  const container = document.querySelector('.receipt-card');
+  container.innerHTML = `
+    <div style="text-align: center; padding: 40px 20px;">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <circle cx="12" cy="16" r="1" fill="var(--danger)"/>
+      </svg>
+      <h3 style="margin: 20px 0 10px; color: var(--text);">عذراً</h3>
+      <p style="color: var(--text-muted); margin-bottom: 30px;">${message}</p>
+      <a href="index.html" class="btn-primary">العودة للرئيسية</a>
+    </div>
+  `;
+}
+
+// تحديث عداد السلة
+function updateCartCount() {
+  const cart = giftstar.getCart();
+  const total = cart.reduce((sum, item) => sum + item.qty, 0);
+  document.querySelectorAll('.cart-count').forEach(el => {
+    if (el) el.textContent = total;
+  });
+}
+
+// تشغيل التهيئة
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  updateCartCount();
+});
 </script>
+
+<style>
+/* أنماط إضافية للإيصال */
+.receipt-details {
+  margin-bottom: 20px;
+}
+
+.receipt-items {
+  margin: 20px 0;
+  padding: 20px 0;
+  border-top: 2px dashed var(--border);
+  border-bottom: 2px dashed var(--border);
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  color: var(--text-muted);
+}
+
+.receipt-row strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.receipt-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--primary);
+  border-top: 2px solid var(--border);
+  margin-top: 10px;
+}
+
+.total-amount {
+  font-size: 24px;
+  color: var(--primary);
+}
+
+.receipt-payment {
+  margin: 15px 0;
+  padding: 15px 0;
+  border-top: 1px solid var(--border);
+}
+
+.receipt-status {
+  margin: 15px 0 25px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 6px 18px;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.status-badge.new {
+  background: rgba(94,201,138,0.2);
+  color: #5ec98a;
+  border: 1px solid rgba(94,201,138,0.3);
+}
+
+.status-badge.processing {
+  background: rgba(243,156,18,0.2);
+  color: #f39c12;
+  border: 1px solid rgba(243,156,18,0.3);
+}
+
+.status-badge.delivered {
+  background: rgba(52,152,219,0.2);
+  color: #3498db;
+  border: 1px solid rgba(52,152,219,0.3);
+}
+
+.status-badge.cancelled {
+  background: rgba(224,85,85,0.2);
+  color: #e05555;
+  border: 1px solid rgba(224,85,85,0.3);
+}
+
+.receipt-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 35px;
+}
+
+.receipt-actions .btn-primary,
+.receipt-actions .btn-outline {
+  flex: 1;
+  text-align: center;
+  padding: 14px;
+  font-size: 15px;
+}
+
+@media print {
+  .site-header,
+  .receipt-actions,
+  .stars-bg {
+    display: none !important;
+  }
+  
+  .receipt-card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+}
+
+@media (max-width: 768px) {
+  .receipt-actions {
+    flex-direction: column;
+  }
+  
+  .receipt-actions .btn-primary,
+  .receipt-actions .btn-outline {
+    width: 100%;
+  }
+}
+</style>
 </body>
 </html>
