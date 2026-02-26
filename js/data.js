@@ -208,10 +208,7 @@ function saveCart(cart) {
             localStorage.setItem('giftstar_cart', JSON.stringify(cart));
         }
         
-        // تحديث العداد في كل الصفحات
         updateCartBadge();
-        
-        // إرسال حدث تحديث السلة
         window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cart }));
         
         return true;
@@ -253,28 +250,12 @@ function addToCart(productId, qty = 1) {
     }
     
     saveCart(cart);
-    
-    // تحديث الصفحات الأخرى
-    broadcastCartUpdate(cart);
-    
     return true;
 }
 
 function removeFromCart(productId) {
     let cart = getCart().filter(item => item.id !== productId);
     saveCart(cart);
-    broadcastCartUpdate(cart);
-    return cart;
-}
-
-function updateCartItemQty(productId, qty) {
-    let cart = getCart();
-    const item = cart.find(i => i.id === productId);
-    if (item) {
-        item.qty = Math.max(1, qty);
-        saveCart(cart);
-        broadcastCartUpdate(cart);
-    }
     return cart;
 }
 
@@ -285,9 +266,8 @@ function clearCart() {
     } else {
         localStorage.removeItem('giftstar_cart');
     }
-    
     updateCartBadge();
-    broadcastCartUpdate([]);
+    window.dispatchEvent(new CustomEvent('cartUpdated', { detail: [] }));
 }
 
 function getCartTotal() {
@@ -314,17 +294,7 @@ function updateCartBadge() {
     }
 }
 
-function broadcastCartUpdate(cart) {
-    // تخزين آخر تحديث للرؤية بين الصفحات
-    sessionStorage.setItem('giftstar_last_cart_update', Date.now().toString());
-    sessionStorage.setItem('giftstar_last_cart', JSON.stringify(cart));
-    
-    // إرسال حدث
-    window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cart }));
-}
-
 function migrateCart() {
-    // نقل السلة من localStorage العام إلى سلة المستخدم
     const user = getCurrentUser();
     if (!user) return;
     
@@ -356,10 +326,8 @@ function createOrder(orderData) {
             return { success: false, error: 'يجب تسجيل الدخول أولاً' };
         }
         
-        // قراءة الطلبات الموجودة
         let orders = getItem('orders', []);
         
-        // إنشاء الطلب الجديد
         const order = {
             id: 'GS' + Date.now() + '-' + Math.floor(Math.random() * 10000),
             ...orderData,
@@ -379,24 +347,14 @@ function createOrder(orderData) {
             lastUpdate: new Date().toISOString()
         };
         
-        // إضافة الطلب للقائمة
         orders.unshift(order);
+        setItem('orders', orders);
         
-        // حفظ الطلبات
-        const saved = setItem('orders', orders);
-        
-        if (!saved) {
-            return { success: false, error: 'فشل في حفظ الطلب' };
-        }
-        
-        // حفظ نسخ احتياطية للوصول السريع
         localStorage.setItem('giftstar_last_order', JSON.stringify(order));
         sessionStorage.setItem('giftstar_last_order', JSON.stringify(order));
         
-        // تحديث إحصائيات المستخدم
-        updateUserStats(user.id, order);
+        clearCart();
         
-        // إرسال حدث تحديث الطلبات
         window.dispatchEvent(new CustomEvent('orderCreated', { detail: order }));
         
         console.log('تم إنشاء الطلب بنجاح:', order.id);
@@ -446,26 +404,9 @@ function updateOrderStatus(orderId, newStatus, note = '') {
     });
     
     setItem('orders', orders);
-    
-    // إرسال حدث تحديث
     window.dispatchEvent(new CustomEvent('orderUpdated', { detail: orders[index] }));
     
     return true;
-}
-
-function updateUserStats(userId, order) {
-    // تحديث إحصائيات المستخدم (يمكن استخدامها لاحقاً)
-    const userStats = getItem('user_stats_' + userId, {
-        totalOrders: 0,
-        totalSpent: 0,
-        lastOrderDate: null
-    });
-    
-    userStats.totalOrders += 1;
-    userStats.totalSpent += order.total || 0;
-    userStats.lastOrderDate = new Date().toISOString();
-    
-    setItem('user_stats_' + userId, userStats);
 }
 
 // =========================================
@@ -540,7 +481,6 @@ function formatKWD(amount) {
 }
 
 function showNotification(msg, type = 'success', duration = 3000) {
-    // إزالة الإشعارات القديمة
     const oldNotifications = document.querySelectorAll('.notification');
     oldNotifications.forEach(n => n.remove());
     
@@ -577,32 +517,14 @@ function showNotification(msg, type = 'success', duration = 3000) {
 function initializeApp() {
     console.log('بدء تشغيل نظام Gift Star...');
     
-    // تهيئة البيانات
     initData();
-    
-    // تحديث الهيدر
     updateHeader();
     
-    // التحقق من وجود طلبات جديدة من صفحات أخرى
-    checkForUpdates();
-    
-    // الاستماع لأحداث التحديث
-    window.addEventListener('cartUpdated', function(e) {
-        console.log('تم تحديث السلة من صفحة أخرى:', e.detail);
-        updateCartBadge();
-    });
-    
-    window.addEventListener('orderCreated', function(e) {
-        console.log('تم إنشاء طلب جديد:', e.detail);
-        // يمكن إضافة تحديثات هنا
-    });
-    
     window.addEventListener('storage', function(e) {
-        // الاستماع للتغييرات في localStorage من صفحات أخرى
         if (e.key === 'giftstar_orders' || e.key === 'giftstar_last_order') {
             console.log('تم تحديث الطلبات من صفحة أخرى');
-            if (window.location.pathname.includes('my-orders')) {
-                // إعادة تحميل الصفحة إذا كنا في صفحة الطلبات
+            if (window.location.pathname.includes('my-orders') || 
+                window.location.pathname.includes('receipt')) {
                 location.reload();
             }
         }
@@ -613,27 +535,19 @@ function initializeApp() {
         }
     });
     
-    // تحديث دوري كل ثانيتين للتأكد من المزامنة
+    window.addEventListener('cartUpdated', function(e) {
+        updateCartBadge();
+    });
+    
+    window.addEventListener('orderCreated', function(e) {
+        console.log('تم إنشاء طلب جديد:', e.detail);
+    });
+    
     setInterval(() => {
-        checkForUpdates();
+        updateCartBadge();
     }, 2000);
     
     console.log('نظام Gift Star جاهز للعمل');
-}
-
-function checkForUpdates() {
-    // التحقق من وجود تحديثات للطلبات
-    const lastOrderUpdate = sessionStorage.getItem('giftstar_last_order_update');
-    const currentTime = Date.now().toString();
-    
-    // تحديث عداد السلة
-    updateCartBadge();
-    
-    // التحقق من وجود طلب جديد في sessionStorage
-    const lastOrder = sessionStorage.getItem('giftstar_last_order');
-    if (lastOrder && !window._lastProcessedOrder) {
-        window._lastProcessedOrder = lastOrder;
-    }
 }
 
 function updateHeader() {
@@ -674,45 +588,30 @@ document.head.appendChild(style);
 // تصدير الدوال
 // =========================================
 window.giftstar = {
-    // المستخدمين
     getCurrentUser,
     login,
     logout,
-    
-    // السلة
     getCart,
     addToCart,
     removeFromCart,
-    updateCartItemQty,
     getCartTotal,
     getCartCount,
     clearCart,
     updateCartBadge,
-    
-    // الطلبات
     createOrder,
     getUserOrders,
     getAllOrders,
     getOrderById,
     updateOrderStatus,
-    
-    // المنتجات
     getProducts,
     getProductById,
-    
-    // العروض
     getPromos,
-    
-    // الإحصائيات
     getDashboardStats,
-    
-    // مساعدة
     formatKWD,
     showNotification,
     updateHeader
 };
 
-// تصدير الدوال العامة
 window.getCurrentUser = getCurrentUser;
 window.login = login;
 window.logout = logout;
@@ -727,7 +626,6 @@ window.formatKWD = formatKWD;
 window.showNotification = showNotification;
 window.updateHeader = updateHeader;
 
-// تشغيل التهيئة
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
