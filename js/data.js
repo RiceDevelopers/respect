@@ -1,54 +1,8 @@
 // =========================================
-// Gift Star - Data Store (نسخة متطورة)
+// Gift Star - Data Store (نسخة مستقرة)
 // =========================================
 
-// استخدام IndexedDB للتخزين المتقدم
-let db;
-
-// تهيئة قاعدة البيانات
-function initDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open('GiftStarDB', 2);
-    
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => {
-      db = request.result;
-      resolve(db);
-    };
-    
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      
-      // إنشاء الجداول
-      if (!db.objectStoreNames.contains('users')) {
-        const usersStore = db.createObjectStore('users', { keyPath: 'id' });
-        usersStore.createIndex('email', 'email', { unique: true });
-      }
-      
-      if (!db.objectStoreNames.contains('products')) {
-        const productsStore = db.createObjectStore('products', { keyPath: 'id' });
-        productsStore.createIndex('category', 'category');
-      }
-      
-      if (!db.objectStoreNames.contains('orders')) {
-        const ordersStore = db.createObjectStore('orders', { keyPath: 'id' });
-        ordersStore.createIndex('userId', 'userId');
-        ordersStore.createIndex('email', 'userEmail');
-        ordersStore.createIndex('date', 'date');
-      }
-      
-      if (!db.objectStoreNames.contains('promos')) {
-        db.createObjectStore('promos', { keyPath: 'id' });
-      }
-      
-      if (!db.objectStoreNames.contains('payment_methods')) {
-        db.createObjectStore('payment_methods', { keyPath: 'id' });
-      }
-    };
-  });
-}
-
-// تخزين البيانات الافتراضية
+// Default data
 const defaultProducts = [
   {
     id: 1,
@@ -127,6 +81,32 @@ const defaultProducts = [
     stock: 18,
     active: true,
     createdAt: new Date().toISOString()
+  },
+  {
+    id: 7,
+    name: "كيك التوت البري",
+    category: "cakes",
+    price: 14.000,
+    image: "https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=400&fit=crop",
+    description: "كيك طازج بكريمة التوت البري وزينة الفواكه المقطفة يومياً",
+    badge: null,
+    featured: false,
+    stock: 12,
+    active: true,
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 8,
+    name: "طقم هدايا عيد الزواج",
+    category: "gifts",
+    price: 35.000,
+    image: "https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=400&h=400&fit=crop",
+    description: "طقم هدايا فاخر لعيد الزواج يشمل شموع وعطور وبطاقة تهنئة خاصة",
+    badge: "مميز",
+    featured: false,
+    stock: 8,
+    active: true,
+    createdAt: new Date().toISOString()
   }
 ];
 
@@ -186,421 +166,95 @@ const defaultUsers = [
   }
 ];
 
-// تهيئة البيانات
-async function initData() {
+// =========================================
+// Storage helpers (localStorage)
+// =========================================
+function getData(key, fallback = []) {
   try {
-    await initDB();
-    
-    // التحقق من وجود المستخدمين
-    const users = await getData('users');
-    if (!users || users.length === 0) {
-      await setData('users', defaultUsers);
-    }
-    
-    // التحقق من وجود المنتجات
-    const products = await getData('products');
-    if (!products || products.length === 0) {
-      await setData('products', defaultProducts);
-    }
-    
-    // التحقق من وجود العروض
-    const promos = await getData('promos');
-    if (!promos || promos.length === 0) {
-      await setData('promos', defaultPromos);
-    }
-    
-    // التحقق من وجود طرق الدفع
-    const payments = await getData('payment_methods');
-    if (!payments || payments.length === 0) {
-      await setData('payment_methods', defaultPaymentMethods);
-    }
-    
-    // التحقق من وجود الطلبات
-    const orders = await getData('orders');
-    if (!orders) {
-      await setData('orders', []);
-    }
-    
-    console.log('Database initialized successfully');
-  } catch (error) {
-    console.error('Error initializing database:', error);
+    const data = localStorage.getItem('giftstar_' + key);
+    return data ? JSON.parse(data) : fallback;
+  } catch (e) {
+    console.error('Error reading from localStorage:', e);
+    return fallback;
   }
 }
 
-// دالة مساعدة لجلب البيانات
-async function getData(storeName) {
-  return new Promise((resolve, reject) => {
-    if (!db) {
-      resolve([]);
-      return;
-    }
-    
-    const transaction = db.transaction(storeName, 'readonly');
-    const store = transaction.objectStore(storeName);
-    const request = store.getAll();
-    
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-// دالة مساعدة لحفظ البيانات
-async function setData(storeName, data) {
-  return new Promise((resolve, reject) => {
-    if (!db) {
-      resolve();
-      return;
-    }
-    
-    const transaction = db.transaction(storeName, 'readwrite');
-    const store = transaction.objectStore(storeName);
-    
-    // مسح البيانات القديمة
-    store.clear().onsuccess = () => {
-      // إضافة البيانات الجديدة
-      if (Array.isArray(data)) {
-        data.forEach(item => store.add(item));
-      } else {
-        store.add(data);
-      }
-    };
-    
-    transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error);
-  });
-}
-
-// دالة لإضافة عنصر جديد
-async function addItem(storeName, item) {
-  return new Promise((resolve, reject) => {
-    if (!db) {
-      resolve();
-      return;
-    }
-    
-    const transaction = db.transaction(storeName, 'readwrite');
-    const store = transaction.objectStore(storeName);
-    const request = store.add(item);
-    
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-// دالة لتحديث عنصر
-async function updateItem(storeName, item) {
-  return new Promise((resolve, reject) => {
-    if (!db) {
-      resolve();
-      return;
-    }
-    
-    const transaction = db.transaction(storeName, 'readwrite');
-    const store = transaction.objectStore(storeName);
-    const request = store.put(item);
-    
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-// دالة لحذف عنصر
-async function deleteItem(storeName, id) {
-  return new Promise((resolve, reject) => {
-    if (!db) {
-      resolve();
-      return;
-    }
-    
-    const transaction = db.transaction(storeName, 'readwrite');
-    const store = transaction.objectStore(storeName);
-    const request = store.delete(id);
-    
-    request.onsuccess = () => resolve();
-    request.onerror = () => reject(request.error);
-  });
-}
-
-// دالة لجلب عنصر بواسطة ID
-async function getItemById(storeName, id) {
-  return new Promise((resolve, reject) => {
-    if (!db) {
-      resolve(null);
-      return;
-    }
-    
-    const transaction = db.transaction(storeName, 'readonly');
-    const store = transaction.objectStore(storeName);
-    const request = store.get(id);
-    
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-// دالة لجلب عناصر بواسطة index
-async function getItemsByIndex(storeName, indexName, value) {
-  return new Promise((resolve, reject) => {
-    if (!db) {
-      resolve([]);
-      return;
-    }
-    
-    const transaction = db.transaction(storeName, 'readonly');
-    const store = transaction.objectStore(storeName);
-    const index = store.index(indexName);
-    const request = index.getAll(value);
-    
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-// =========================================
-// نظام المستخدمين
-// =========================================
-async function register(name, email, password, phone = '') {
+function setData(key, value) {
   try {
-    const users = await getData('users');
-    
-    // التحقق من وجود البريد الإلكتروني
-    if (users.find(u => u.email === email)) {
-      return { success: false, error: 'البريد الإلكتروني مسجل مسبقاً' };
-    }
-    
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const newUser = {
-      id: Date.now(),
-      name,
-      email,
-      password,
-      phone,
-      role: 'customer',
-      verified: false,
-      verifyCode: code,
+    localStorage.setItem('giftstar_' + key, JSON.stringify(value));
+    return true;
+  } catch (e) {
+    console.error('Error writing to localStorage:', e);
+    return false;
+  }
+}
+
+// Initialize default data if not exists
+function initData() {
+  console.log('Initializing data...');
+  
+  if (!localStorage.getItem('giftstar_products')) {
+    console.log('Setting default products');
+    setData('products', defaultProducts);
+  }
+  
+  if (!localStorage.getItem('giftstar_promos')) {
+    setData('promos', defaultPromos);
+  }
+  
+  if (!localStorage.getItem('giftstar_payment_methods')) {
+    setData('payment_methods', defaultPaymentMethods);
+  }
+  
+  if (!localStorage.getItem('giftstar_orders')) {
+    setData('orders', []);
+  }
+  
+  // Always ensure admin user exists
+  const users = getData('users', []);
+  const adminExists = users.find(u => u.email === 'admin@giftstar.kw');
+  
+  if (!adminExists) {
+    users.unshift({
+      id: 1,
+      name: "مدير المتجر",
+      email: "admin@giftstar.kw",
+      password: "Admin@2024",
+      role: "admin",
+      verified: true,
       createdAt: new Date().toISOString(),
-      orders: []
-    };
-    
-    users.push(newUser);
-    await setData('users', users);
-    
-    // تخزين كود التحقق مؤقتاً
-    sessionStorage.setItem('giftstar_pending_verify', JSON.stringify({ email, code }));
-    
-    return { success: true, code };
-  } catch (error) {
-    console.error('Registration error:', error);
-    return { success: false, error: 'حدث خطأ أثناء التسجيل' };
-  }
-}
-
-async function login(email, password) {
-  try {
-    const users = await getData('users');
-    const user = users.find(u => u.email === email && u.password === password);
-    
-    if (!user) {
-      return { success: false, error: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' };
-    }
-    
-    if (!user.verified) {
-      return { success: false, error: 'يرجى تفعيل حسابك أولاً' };
-    }
-    
-    // تخزين جلسة المستخدم
-    const userSession = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      phone: user.phone
-    };
-    
-    sessionStorage.setItem('giftstar_user', JSON.stringify(userSession));
-    localStorage.setItem('giftstar_user_' + user.id, JSON.stringify(userSession));
-    
-    return { success: true, user: userSession };
-  } catch (error) {
-    console.error('Login error:', error);
-    return { success: false, error: 'حدث خطأ أثناء تسجيل الدخول' };
-  }
-}
-
-function logout() {
-  const user = getCurrentUser();
-  if (user) {
-    localStorage.removeItem('giftstar_user_' + user.id);
-  }
-  sessionStorage.removeItem('giftstar_user');
-  window.location.href = 'index.html';
-}
-
-function getCurrentUser() {
-  try {
-    const userStr = sessionStorage.getItem('giftstar_user');
-    return userStr ? JSON.parse(userStr) : null;
-  } catch {
-    return null;
-  }
-}
-
-async function verifyCode(email, inputCode) {
-  try {
-    const pending = JSON.parse(sessionStorage.getItem('giftstar_pending_verify') || '{}');
-    if (pending.email !== email || pending.code !== inputCode) {
-      return false;
-    }
-    
-    const users = await getData('users');
-    const userIndex = users.findIndex(u => u.email === email);
-    
-    if (userIndex === -1) return false;
-    
-    users[userIndex].verified = true;
-    delete users[userIndex].verifyCode;
-    
-    await setData('users', users);
-    sessionStorage.removeItem('giftstar_pending_verify');
-    
-    // تسجيل الدخول تلقائياً
-    const user = users[userIndex];
-    sessionStorage.setItem('giftstar_user', JSON.stringify({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      phone: user.phone
-    }));
-    
-    return true;
-  } catch (error) {
-    console.error('Verification error:', error);
-    return false;
-  }
-}
-
-// =========================================
-// نظام الطلبات
-// =========================================
-async function createOrder(orderData) {
-  try {
-    const orders = await getData('orders') || [];
-    
-    const order = {
-      id: 'GS' + Date.now() + Math.floor(Math.random() * 1000),
-      ...orderData,
-      date: new Date().toLocaleDateString('ar-KW'),
-      time: new Date().toLocaleTimeString('ar-KW'),
-      status: 'جديد',
-      statusHistory: [
-        {
-          status: 'جديد',
-          date: new Date().toISOString(),
-          note: 'تم استلام الطلب'
-        }
-      ],
-      lastUpdate: new Date().toISOString()
-    };
-    
-    orders.unshift(order);
-    await setData('orders', orders);
-    
-    // حفظ في localStorage للنسخ الاحتياطي
-    localStorage.setItem('giftstar_last_order', JSON.stringify(order));
-    
-    // إضافة الطلب للمستخدم
-    const users = await getData('users');
-    const userIndex = users.findIndex(u => u.id === orderData.userId);
-    if (userIndex !== -1) {
-      if (!users[userIndex].orders) users[userIndex].orders = [];
-      users[userIndex].orders.push(order.id);
-      await setData('users', users);
-    }
-    
-    return order;
-  } catch (error) {
-    console.error('Error creating order:', error);
-    throw error;
-  }
-}
-
-async function getUserOrders(userId) {
-  try {
-    const orders = await getData('orders');
-    return orders.filter(order => order.userId === userId).sort((a, b) => 
-      new Date(b.lastUpdate) - new Date(a.lastUpdate)
-    );
-  } catch (error) {
-    console.error('Error getting user orders:', error);
-    return [];
-  }
-}
-
-async function getUserOrdersByEmail(email) {
-  try {
-    const orders = await getData('orders');
-    return orders.filter(order => order.userEmail === email).sort((a, b) => 
-      new Date(b.lastUpdate) - new Date(a.lastUpdate)
-    );
-  } catch (error) {
-    console.error('Error getting user orders by email:', error);
-    return [];
-  }
-}
-
-async function updateOrderStatus(orderId, newStatus, note = '') {
-  try {
-    const orders = await getData('orders');
-    const orderIndex = orders.findIndex(o => o.id === orderId);
-    
-    if (orderIndex === -1) return false;
-    
-    orders[orderIndex].status = newStatus;
-    orders[orderIndex].lastUpdate = new Date().toISOString();
-    
-    if (!orders[orderIndex].statusHistory) {
-      orders[orderIndex].statusHistory = [];
-    }
-    
-    orders[orderIndex].statusHistory.push({
-      status: newStatus,
-      date: new Date().toISOString(),
-      note: note
+      phone: "96512345678"
     });
-    
-    await setData('orders', orders);
-    return true;
-  } catch (error) {
-    console.error('Error updating order status:', error);
-    return false;
+    setData('users', users);
   }
+  
+  console.log('Data initialized successfully');
 }
 
 // =========================================
-// نظام السلة
+// Cart
 // =========================================
-function getCart() {
+function getCart() { 
   const user = getCurrentUser();
   if (user) {
     const cart = localStorage.getItem('giftstar_cart_' + user.id);
     return cart ? JSON.parse(cart) : [];
   }
-  return JSON.parse(localStorage.getItem('giftstar_cart') || '[]');
+  return getData('cart', []); 
 }
 
-function saveCart(cart) {
+function saveCart(cart) { 
   const user = getCurrentUser();
   if (user) {
     localStorage.setItem('giftstar_cart_' + user.id, JSON.stringify(cart));
   } else {
-    localStorage.setItem('giftstar_cart', JSON.stringify(cart));
+    setData('cart', cart); 
   }
   updateCartBadge();
 }
 
 function addToCart(productId, qty = 1) {
-  const products = JSON.parse(localStorage.getItem('giftstar_products') || '[]');
+  const products = getData('products', defaultProducts);
   const product = products.find(p => p.id === productId);
   if (!product) return false;
 
@@ -631,8 +285,8 @@ function removeFromCart(productId) {
 function updateCartBadge() {
   const cart = getCart();
   const total = cart.reduce((s, i) => s + i.qty, 0);
-  document.querySelectorAll('.cart-count').forEach(el => {
-    el.textContent = total;
+  document.querySelectorAll('.cart-count, #cartCount').forEach(el => {
+    if (el) el.textContent = total;
   });
 }
 
@@ -645,16 +299,223 @@ function clearCart() {
   if (user) {
     localStorage.removeItem('giftstar_cart_' + user.id);
   } else {
-    localStorage.removeItem('giftstar_cart');
+    setData('cart', []);
   }
   updateCartBadge();
 }
 
 // =========================================
-// نظام المنتجات
+// Auth
 // =========================================
-async function getProducts(filters = {}) {
-  let products = await getData('products') || [];
+function getCurrentUser() {
+  try {
+    const userStr = sessionStorage.getItem('giftstar_user');
+    return userStr ? JSON.parse(userStr) : null;
+  } catch (e) {
+    console.error('Error getting current user:', e);
+    return null;
+  }
+}
+
+function login(email, password) {
+  console.log('Login attempt:', email, password);
+  
+  const users = getData('users', []);
+  console.log('Users in storage:', users);
+  
+  const user = users.find(u => u.email === email && u.password === password);
+  
+  if (!user) {
+    console.log('User not found or password incorrect');
+    return { success: false, error: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' };
+  }
+  
+  if (!user.verified) {
+    console.log('User not verified');
+    return { success: false, error: 'يرجى تفعيل حسابك أولاً' };
+  }
+  
+  // Create session object (without password)
+  const sessionUser = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    phone: user.phone
+  };
+  
+  sessionStorage.setItem('giftstar_user', JSON.stringify(sessionUser));
+  console.log('Login successful:', sessionUser);
+  
+  return { success: true, user: sessionUser };
+}
+
+function logout() {
+  sessionStorage.removeItem('giftstar_user');
+  window.location.href = 'index.html';
+}
+
+function register(name, email, password, phone = '') {
+  const users = getData('users', []);
+  
+  if (users.find(u => u.email === email)) {
+    return { success: false, error: 'البريد الإلكتروني مسجل مسبقاً' };
+  }
+  
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const newUser = {
+    id: Date.now(),
+    name,
+    email,
+    password,
+    phone,
+    role: 'customer',
+    verified: false,
+    verifyCode: code,
+    createdAt: new Date().toISOString()
+  };
+  
+  users.push(newUser);
+  setData('users', users);
+  
+  // Store verification code temporarily
+  sessionStorage.setItem('giftstar_pending_verify', JSON.stringify({ email, code }));
+  
+  console.log('Registration successful, code:', code);
+  return { success: true, code };
+}
+
+function verifyCode(email, inputCode) {
+  const pending = JSON.parse(sessionStorage.getItem('giftstar_pending_verify') || '{}');
+  
+  if (pending.email !== email || pending.code !== inputCode) {
+    return false;
+  }
+  
+  const users = getData('users', []);
+  const userIndex = users.findIndex(u => u.email === email);
+  
+  if (userIndex === -1) return false;
+  
+  users[userIndex].verified = true;
+  delete users[userIndex].verifyCode;
+  
+  setData('users', users);
+  sessionStorage.removeItem('giftstar_pending_verify');
+  
+  // Auto login
+  const user = users[userIndex];
+  sessionStorage.setItem('giftstar_user', JSON.stringify({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    phone: user.phone
+  }));
+  
+  return true;
+}
+
+function updateHeader() {
+  const user = getCurrentUser();
+  const loginBtn = document.getElementById('loginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  
+  if (!loginBtn) return;
+  
+  if (user) {
+    loginBtn.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'inline-block';
+  } else {
+    loginBtn.style.display = 'inline-block';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+  }
+  
+  updateCartBadge();
+}
+
+// =========================================
+// Orders
+// =========================================
+function createOrder(orderData) {
+  const orders = getData('orders', []);
+  
+  const order = {
+    id: 'GS' + Date.now() + Math.floor(Math.random() * 1000),
+    ...orderData,
+    date: new Date().toLocaleDateString('ar-KW'),
+    time: new Date().toLocaleTimeString('ar-KW'),
+    status: 'new',
+    statusHistory: [
+      {
+        status: 'new',
+        date: new Date().toISOString(),
+        note: 'تم استلام الطلب'
+      }
+    ],
+    lastUpdate: new Date().toISOString()
+  };
+  
+  orders.unshift(order);
+  setData('orders', orders);
+  
+  // Save last order
+  sessionStorage.setItem('giftstar_last_order', JSON.stringify(order));
+  
+  // Add order to user
+  const users = getData('users', []);
+  const userIndex = users.findIndex(u => u.id === orderData.userId);
+  if (userIndex !== -1) {
+    if (!users[userIndex].orders) users[userIndex].orders = [];
+    users[userIndex].orders.push(order.id);
+    setData('users', users);
+  }
+  
+  return order;
+}
+
+function getUserOrders(userId) {
+  const orders = getData('orders', []);
+  return orders.filter(order => order.userId === userId).sort((a, b) => 
+    new Date(b.lastUpdate) - new Date(a.lastUpdate)
+  );
+}
+
+function getUserOrdersByEmail(email) {
+  const orders = getData('orders', []);
+  return orders.filter(order => order.userEmail === email).sort((a, b) => 
+    new Date(b.lastUpdate) - new Date(a.lastUpdate)
+  );
+}
+
+function updateOrderStatus(orderId, newStatus, note = '') {
+  const orders = getData('orders', []);
+  const orderIndex = orders.findIndex(o => o.id === orderId);
+  
+  if (orderIndex === -1) return false;
+  
+  orders[orderIndex].status = newStatus;
+  orders[orderIndex].lastUpdate = new Date().toISOString();
+  
+  if (!orders[orderIndex].statusHistory) {
+    orders[orderIndex].statusHistory = [];
+  }
+  
+  orders[orderIndex].statusHistory.push({
+    status: newStatus,
+    date: new Date().toISOString(),
+    note: note
+  });
+  
+  setData('orders', orders);
+  return true;
+}
+
+// =========================================
+// Products
+// =========================================
+function getProducts(filters = {}) {
+  let products = getData('products', defaultProducts);
   
   if (filters.category && filters.category !== 'all') {
     products = products.filter(p => p.category === filters.category);
@@ -679,99 +540,73 @@ async function getProducts(filters = {}) {
   return products;
 }
 
-async function addProduct(product) {
-  try {
-    const products = await getData('products') || [];
-    product.id = Date.now();
-    product.createdAt = new Date().toISOString();
-    products.push(product);
-    await setData('products', products);
-    return { success: true, id: product.id };
-  } catch (error) {
-    console.error('Error adding product:', error);
-    return { success: false, error: error.message };
-  }
+function getProductById(id) {
+  const products = getData('products', defaultProducts);
+  return products.find(p => p.id === id);
 }
 
-async function updateProduct(product) {
-  try {
-    const products = await getData('products') || [];
-    const index = products.findIndex(p => p.id === product.id);
-    if (index !== -1) {
-      products[index] = { ...products[index], ...product, updatedAt: new Date().toISOString() };
-      await setData('products', products);
-      return { success: true };
-    }
-    return { success: false, error: 'Product not found' };
-  } catch (error) {
-    console.error('Error updating product:', error);
-    return { success: false, error: error.message };
-  }
+function addProduct(product) {
+  const products = getData('products', defaultProducts);
+  product.id = Date.now();
+  product.createdAt = new Date().toISOString();
+  products.push(product);
+  setData('products', products);
+  return { success: true, id: product.id };
 }
 
-async function deleteProduct(productId) {
-  try {
-    const products = await getData('products') || [];
-    const filtered = products.filter(p => p.id !== productId);
-    await setData('products', filtered);
+function updateProduct(product) {
+  const products = getData('products', defaultProducts);
+  const index = products.findIndex(p => p.id === product.id);
+  if (index !== -1) {
+    products[index] = { ...products[index], ...product, updatedAt: new Date().toISOString() };
+    setData('products', products);
     return { success: true };
-  } catch (error) {
-    console.error('Error deleting product:', error);
-    return { success: false, error: error.message };
   }
+  return { success: false, error: 'Product not found' };
+}
+
+function deleteProduct(productId) {
+  const products = getData('products', defaultProducts);
+  const filtered = products.filter(p => p.id !== productId);
+  setData('products', filtered);
+  return { success: true };
 }
 
 // =========================================
-// نظام الإحصائيات
+// Dashboard Stats
 // =========================================
-async function getDashboardStats() {
-  try {
-    const orders = await getData('orders') || [];
-    const products = await getData('products') || [];
-    const users = await getData('users') || [];
-    
-    const today = new Date().toLocaleDateString('ar-KW');
-    const todayOrders = orders.filter(o => o.date === today);
-    
-    const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
-    const todayRevenue = todayOrders.reduce((sum, order) => sum + (order.total || 0), 0);
-    
-    const lastMonth = new Date();
-    lastMonth.setMonth(lastMonth.getMonth() - 1);
-    const recentOrders = orders.filter(o => new Date(o.lastUpdate) > lastMonth);
-    
-    return {
-      totalOrders: orders.length,
-      todayOrders: todayOrders.length,
-      totalProducts: products.filter(p => p.active).length,
-      totalUsers: users.filter(u => u.role === 'customer').length,
-      totalRevenue,
-      todayRevenue,
-      recentOrders: recentOrders.length,
-      averageOrderValue: orders.length ? (totalRevenue / orders.length).toFixed(3) : 0
-    };
-  } catch (error) {
-    console.error('Error getting stats:', error);
-    return {
-      totalOrders: 0,
-      todayOrders: 0,
-      totalProducts: 0,
-      totalUsers: 0,
-      totalRevenue: 0,
-      todayRevenue: 0,
-      recentOrders: 0,
-      averageOrderValue: 0
-    };
-  }
+function getDashboardStats() {
+  const orders = getData('orders', []);
+  const products = getData('products', defaultProducts);
+  const users = getData('users', []);
+  
+  const today = new Date().toLocaleDateString('ar-KW');
+  const todayOrders = orders.filter(o => o.date === today);
+  
+  const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+  const todayRevenue = todayOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+  
+  return {
+    totalOrders: orders.length,
+    todayOrders: todayOrders.length,
+    totalProducts: products.filter(p => p.active).length,
+    totalUsers: users.filter(u => u.role === 'customer').length,
+    totalRevenue,
+    todayRevenue,
+    averageOrderValue: orders.length ? (totalRevenue / orders.length).toFixed(3) : 0
+  };
 }
 
 // =========================================
-// دوال مساعدة
+// Format currency
 // =========================================
 function formatKWD(amount) {
-  return amount.toFixed(3) + ' د.ك';
+  return Number(amount).toFixed(3) + ' د.ك';
 }
 
+// =========================================
+// Notification helper
+// =========================================
 function showNotification(msg, type = 'success') {
   const el = document.createElement('div');
   el.className = 'notification ' + type;
@@ -780,44 +615,57 @@ function showNotification(msg, type = 'success') {
   setTimeout(() => el.remove(), 3000);
 }
 
-// تصدير الدوال
+// =========================================
+// Export to window
+// =========================================
 window.giftstar = {
-  initData,
+  // Data
   getData,
   setData,
-  addItem,
-  updateItem,
-  deleteItem,
-  getItemById,
-  getItemsByIndex,
-  register,
-  login,
-  logout,
-  getCurrentUser,
-  verifyCode,
-  createOrder,
-  getUserOrders,
-  getUserOrdersByEmail,
-  updateOrderStatus,
+  
+  // Cart
   getCart,
   saveCart,
   addToCart,
   removeFromCart,
   getCartTotal,
   clearCart,
+  updateCartBadge,
+  
+  // Auth
+  getCurrentUser,
+  login,
+  logout,
+  register,
+  verifyCode,
+  updateHeader,
+  
+  // Orders
+  createOrder,
+  getUserOrders,
+  getUserOrdersByEmail,
+  updateOrderStatus,
+  
+  // Products
   getProducts,
+  getProductById,
   addProduct,
   updateProduct,
   deleteProduct,
+  
+  // Stats
   getDashboardStats,
+  
+  // Utils
   formatKWD,
   showNotification
 };
 
-// تهيئة البيانات عند تحميل الصفحة
+// Initialize
+initData();
+
+// Update header on load
 document.addEventListener('DOMContentLoaded', () => {
-  initData().then(() => {
-    console.log('Gift Star Data System Ready');
-    updateCartBadge();
-  });
+  updateHeader();
+  console.log('Gift Star Data System Ready');
 });
