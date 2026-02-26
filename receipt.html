@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>الإيصال - Gift Star</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+<header class="site-header" id="mainHeader">
+  <div class="header-main">
+    <div class="container header-flex">
+      <a href="index.html" class="logo">
+        <div class="logo-star">★</div>
+        <div class="logo-text"><span class="logo-gift">Gift</span><span class="logo-star-word">Star</span></div>
+      </a>
+    </div>
+  </div>
+</header>
+
+<div class="receipt-page">
+  <div class="receipt-card" id="receiptCard">
+    <div class="receipt-header">
+      <div class="receipt-check">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h2>تم الطلب بنجاح!</h2>
+      <p>شكراً لك، سيتم التواصل معك قريباً للتأكيد</p>
+    </div>
+
+    <div class="receipt-number" id="receiptNum">رقم الطلب: GS...</div>
+
+    <div id="receiptDetails"></div>
+
+    <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+      <div id="receiptItems"></div>
+    </div>
+
+    <div class="receipt-total" id="receiptTotal"></div>
+
+    <div id="receiptPayment" style="margin-top:12px;font-size:14px;color:var(--text-muted)"></div>
+
+    <div class="receipt-actions" id="receiptActions">
+      <button class="btn-primary" onclick="printPDF()">طباعة PDF</button>
+      <a href="index.html" class="btn-outline">العودة للرئيسية</a>
+    </div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script>
+function init() {
+  const order = JSON.parse(sessionStorage.getItem('giftstar_last_order') || 'null');
+  if (!order) { window.location.href = 'index.html'; return; }
+
+  document.getElementById('receiptNum').textContent = 'رقم الطلب: ' + order.id;
+
+  document.getElementById('receiptDetails').innerHTML = `
+    <div class="receipt-row"><span>الاسم</span><strong>${order.customer.name}</strong></div>
+    <div class="receipt-row"><span>الهاتف</span><strong>${order.customer.phone}</strong></div>
+    <div class="receipt-row"><span>المنطقة</span><strong>${order.customer.area}</strong></div>
+    <div class="receipt-row"><span>العنوان</span><strong>${order.customer.address}</strong></div>
+    <div class="receipt-row"><span>التاريخ</span><strong>${order.date} - ${order.time}</strong></div>
+  `;
+
+  document.getElementById('receiptItems').innerHTML = order.items.map(i => `
+    <div class="receipt-row">
+      <span>${i.name} x${i.qty}</span>
+      <strong>${(i.price * i.qty).toFixed(3)} د.ك</strong>
+    </div>
+  `).join('') + `
+    <div class="receipt-row"><span>التوصيل</span><strong>${order.delivery === 0 ? 'مجاني' : order.delivery.toFixed(3) + ' د.ك'}</strong></div>
+  `;
+
+  document.getElementById('receiptTotal').innerHTML = `
+    <span>الإجمالي</span><span>${order.total.toFixed(3)} د.ك</span>
+  `;
+
+  document.getElementById('receiptPayment').textContent = 'طريقة الدفع: ' + order.paymentMethod;
+}
+
+function printPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const order = JSON.parse(sessionStorage.getItem('giftstar_last_order'));
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(22);
+  doc.text('Gift Star', 105, 25, { align: 'center' });
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Kuwait Gift Store - giftstar.com.kw', 105, 33, { align: 'center' });
+
+  doc.setLineWidth(0.5);
+  doc.line(20, 38, 190, 38);
+
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Order Receipt', 20, 48);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.text('Order ID: ' + order.id, 20, 56);
+  doc.text('Date: ' + order.date + ' ' + order.time, 20, 63);
+
+  doc.line(20, 68, 190, 68);
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('Delivery Info:', 20, 76);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Name: ' + order.customer.name, 20, 84);
+  doc.text('Phone: ' + order.customer.phone, 20, 91);
+  doc.text('Area: ' + order.customer.area, 20, 98);
+  doc.text('Address: ' + order.customer.address, 20, 105);
+
+  doc.line(20, 110, 190, 110);
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('Items:', 20, 118);
+  doc.setFont('helvetica', 'normal');
+
+  let y = 126;
+  order.items.forEach(item => {
+    doc.text(item.name + ' x' + item.qty, 20, y);
+    doc.text(item.price.toFixed(3) + ' KD x' + item.qty + ' = ' + (item.price * item.qty).toFixed(3) + ' KD', 130, y);
+    y += 8;
+  });
+
+  doc.line(20, y + 2, 190, y + 2);
+  doc.text('Subtotal:', 20, y + 10);
+  doc.text(order.subtotal.toFixed(3) + ' KD', 170, y + 10, { align: 'right' });
+  doc.text('Delivery:', 20, y + 18);
+  doc.text(order.delivery === 0 ? 'Free' : order.delivery.toFixed(3) + ' KD', 170, y + 18, { align: 'right' });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.text('TOTAL:', 20, y + 28);
+  doc.text(order.total.toFixed(3) + ' KD', 170, y + 28, { align: 'right' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.text('Payment Method: ' + order.paymentMethod, 20, y + 38);
+
+  doc.line(20, y + 44, 190, y + 44);
+  doc.setFontSize(10);
+  doc.text('Thank you for shopping at Gift Star - Kuwait', 105, y + 52, { align: 'center' });
+
+  doc.save('GiftStar-Receipt-' + order.id + '.pdf');
+}
+
+init();
+</script>
+</body>
+</html>
