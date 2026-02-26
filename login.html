@@ -8,30 +8,30 @@
 <link rel="stylesheet" href="css/style.css">
 <style>
   .auth-page {
-    min-height: 80vh;
+    min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 60px 20px;
-    background: var(--secondary);
+    padding: 40px 20px;
+    background: linear-gradient(135deg, var(--secondary) 0%, #0a0e1a 100%);
     position: relative;
   }
   
   .auth-card {
-    background: var(--secondary-light);
+    background: linear-gradient(135deg, var(--secondary-light) 0%, #1a1f2f 100%);
     backdrop-filter: blur(10px);
-    border-radius: var(--radius-lg);
+    border-radius: 30px;
     padding: 50px;
     width: 100%;
     max-width: 480px;
-    box-shadow: var(--shadow-lg);
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
     position: relative;
     z-index: 2;
     border: 1px solid var(--border);
   }
   
   .auth-card h2 {
-    font-size: 32px;
+    font-size: 36px;
     font-weight: 900;
     color: var(--text);
     margin-bottom: 10px;
@@ -42,8 +42,8 @@
   .auth-sub {
     text-align: center;
     color: var(--text-muted);
-    font-size: 15px;
-    margin-bottom: 35px;
+    font-size: 16px;
+    margin-bottom: 40px;
   }
   
   .form-group {
@@ -60,21 +60,23 @@
   
   .form-input {
     width: 100%;
-    padding: 14px 18px;
+    padding: 16px 20px;
     border: 2px solid var(--border);
-    border-radius: var(--radius-sm);
+    border-radius: 15px;
     font-family: var(--font);
-    font-size: 15px;
+    font-size: 16px;
     color: var(--text);
-    background: var(--secondary);
-    transition: var(--transition);
-    direction: rtl;
+    background: rgba(0,0,0,0.3);
+    transition: all 0.3s ease;
+    direction: ltr;
+    text-align: left;
   }
   
   .form-input:focus {
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 4px rgba(200,169,110,0.1);
+    background: rgba(0,0,0,0.5);
   }
   
   .btn-submit {
@@ -82,13 +84,14 @@
     background: linear-gradient(135deg, var(--primary), var(--primary-light));
     color: var(--secondary);
     border: none;
-    padding: 16px;
-    border-radius: 50px;
-    font-size: 17px;
+    padding: 18px;
+    border-radius: 15px;
+    font-size: 18px;
     font-weight: 800;
-    transition: var(--transition);
+    transition: all 0.3s ease;
     cursor: pointer;
     box-shadow: 0 5px 20px rgba(200,169,110,0.3);
+    margin-top: 20px;
   }
   
   .btn-submit:hover { 
@@ -100,44 +103,51 @@
   .btn-submit:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    transform: none;
   }
   
   .auth-footer {
     text-align: center;
     margin-top: 25px;
-    font-size: 14px;
+    font-size: 15px;
     color: var(--text-muted);
   }
   
   .auth-footer a {
     color: var(--primary);
     font-weight: 700;
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+  
+  .auth-footer a:hover {
     text-decoration: underline;
   }
   
   .alert {
     padding: 16px 20px;
-    border-radius: var(--radius-sm);
-    margin-bottom: 20px;
+    border-radius: 15px;
+    margin-bottom: 25px;
     font-size: 14px;
     font-weight: 600;
     text-align: center;
+    animation: slideDown 0.3s ease;
   }
   
   .alert-error {
-    background: rgba(224,85,85,0.1);
-    color: #e05555;
+    background: rgba(224,85,85,0.15);
+    color: #ff6b6b;
     border: 1px solid rgba(224,85,85,0.3);
   }
   
   .alert-success {
-    background: rgba(94,201,138,0.1);
+    background: rgba(94,201,138,0.15);
     color: #5ec98a;
     border: 1px solid rgba(94,201,138,0.3);
   }
   
   .reset-btn {
-    margin-top: 20px;
+    margin-top: 25px;
     text-align: center;
   }
   
@@ -145,16 +155,90 @@
     background: none;
     border: 1px solid var(--primary);
     color: var(--primary);
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 12px;
+    padding: 10px 20px;
+    border-radius: 30px;
+    font-size: 13px;
     cursor: pointer;
-    transition: var(--transition);
+    transition: all 0.3s ease;
   }
   
   .reset-btn button:hover {
     background: var(--primary);
     color: var(--secondary);
+  }
+  
+  .demo-accounts {
+    margin-top: 30px;
+    padding: 20px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 15px;
+    border: 1px solid var(--border);
+  }
+  
+  .demo-accounts h4 {
+    color: var(--primary);
+    margin-bottom: 15px;
+    font-size: 16px;
+    text-align: center;
+  }
+  
+  .demo-account {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .demo-account:hover {
+    background: rgba(200,169,110,0.1);
+    transform: translateX(-5px);
+  }
+  
+  .demo-account .email {
+    color: var(--text);
+    font-family: monospace;
+  }
+  
+  .demo-account .password {
+    color: var(--text-muted);
+    font-family: monospace;
+  }
+  
+  .demo-account .badge {
+    background: var(--primary);
+    color: var(--secondary);
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes slideUp {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
   }
 </style>
 </head>
@@ -183,18 +267,32 @@
 
     <div class="form-group">
       <label class="form-label">البريد الإلكتروني</label>
-      <input type="email" id="email" class="form-input" placeholder="example@email.com" dir="ltr" value="admin@giftstar.kw">
+      <input type="email" id="email" class="form-input" placeholder="admin@giftstar.kw" dir="ltr" value="admin@giftstar.kw">
     </div>
     
     <div class="form-group">
       <label class="form-label">كلمة المرور</label>
-      <input type="password" id="password" class="form-input" placeholder="كلمة المرور" dir="ltr" value="Admin@2024">
+      <input type="password" id="password" class="form-input" placeholder="••••••••" dir="ltr" value="Admin@2024">
     </div>
 
-    <button class="btn-submit" onclick="doLogin()" id="loginBtn">دخول</button>
+    <button class="btn-submit" onclick="doLogin()" id="loginBtn">تسجيل الدخول</button>
 
     <div class="auth-footer">
       ليس لديك حساب؟ <a href="register.html">إنشاء حساب جديد</a>
+    </div>
+
+    <div class="demo-accounts">
+      <h4>🌟 حسابات تجريبية</h4>
+      <div class="demo-account" onclick="fillCredentials('admin@giftstar.kw', 'Admin@2024')">
+        <span class="email">admin@giftstar.kw</span>
+        <span class="password">Admin@2024</span>
+        <span class="badge">مدير</span>
+      </div>
+      <div class="demo-account" onclick="fillCredentials('ahmed@test.com', '12345678')">
+        <span class="email">ahmed@test.com</span>
+        <span class="password">12345678</span>
+        <span class="badge">عميل</span>
+      </div>
     </div>
 
     <div class="reset-btn">
@@ -203,84 +301,316 @@
   </div>
 </div>
 
-<!-- Firebase SDK -->
-<script type="importmap">
-  {
-    "imports": {
-      "firebase/app": "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js",
-      "firebase/auth": "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js"
+<script>
+// =========================================
+// دوال التخزين الأساسية
+// =========================================
+function setItem(key, value) {
+    try {
+        localStorage.setItem('giftstar_' + key, JSON.stringify(value));
+        return true;
+    } catch (e) {
+        console.error('خطأ في الحفظ:', e);
+        return false;
     }
-  }
-</script>
+}
 
-<script type="module" src="js/data.js"></script>
-<script type="module">
-import { login, getCurrentUser } from './js/data.js';
+function getItem(key, fallback = null) {
+    try {
+        const data = localStorage.getItem('giftstar_' + key);
+        return data ? JSON.parse(data) : fallback;
+    } catch (e) {
+        console.error('خطأ في القراءة:', e);
+        return fallback;
+    }
+}
 
-window.doLogin = async function() {
+// =========================================
+// إعادة تعيين النظام بالكامل
+// =========================================
+function resetSystem() {
+    console.log('🔄 جاري إعادة تعيين النظام...');
+    
+    // إنشاء حساب المدير
+    const adminUser = {
+        id: 1,
+        name: "مدير المتجر",
+        email: "admin@giftstar.kw",
+        password: "Admin@2024",
+        role: "admin",
+        verified: true,
+        createdAt: new Date().toISOString(),
+        phone: "51234567"
+    };
+    
+    // إنشاء مستخدم تجريبي
+    const testUser = {
+        id: 2,
+        name: "أحمد محمد",
+        email: "ahmed@test.com",
+        password: "12345678",
+        role: "customer",
+        verified: true,
+        createdAt: new Date().toISOString(),
+        phone: "51234568"
+    };
+    
+    // حفظ المستخدمين
+    const users = [adminUser, testUser];
+    localStorage.setItem('giftstar_users', JSON.stringify(users));
+    
+    // إنشاء منتجات تجريبية
+    const products = [
+        {
+            id: 1,
+            name: "كيك الفراولة الفاخر",
+            category: "cakes",
+            price: 12.500,
+            image: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&h=400&fit=crop",
+            description: "كيك فراولة طازجة بكريمة الشانتيه الفرنسية",
+            badge: "الأكثر مبيعاً",
+            featured: true,
+            stock: 20,
+            active: true
+        },
+        {
+            id: 2,
+            name: "باقة ورد حمراء",
+            category: "flowers",
+            price: 8.750,
+            image: "https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?w=400&h=400&fit=crop",
+            description: "24 وردة حمراء طازجة",
+            badge: "جديد",
+            featured: true,
+            stock: 30,
+            active: true
+        }
+    ];
+    localStorage.setItem('giftstar_products', JSON.stringify(products));
+    
+    // إنشاء طلبات فارغة
+    localStorage.setItem('giftstar_orders', JSON.stringify([]));
+    
+    // إنشاء عروض
+    const promos = [
+        {
+            id: 1,
+            title: "خصم 20% على جميع الكيك",
+            description: "عرض خاص لفترة محدودة",
+            image: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=600&h=300&fit=crop",
+            badge: "عرض",
+            active: true
+        }
+    ];
+    localStorage.setItem('giftstar_promos', JSON.stringify(promos));
+    
+    // إنشاء طرق دفع
+    const paymentMethods = [
+        { id: 1, name: "بطاقة ائتمانية / مدين", description: "Visa, Mastercard, KNET", icon: "card", active: true },
+        { id: 2, name: "تحويل بنكي", description: "تحويل بنكي مباشر", icon: "bank", active: true },
+        { id: 3, name: "نقداً عند الاستلام", description: "الدفع نقداً للمندوب", icon: "cash", active: true }
+    ];
+    localStorage.setItem('giftstar_payment_methods', JSON.stringify(paymentMethods));
+    
+    // عرض رسالة النجاح
+    const successBanner = document.getElementById('successBanner');
+    successBanner.style.display = 'block';
+    successBanner.textContent = '✅ تم إعادة تعيين النظام بنجاح! يمكنك تسجيل الدخول الآن';
+    
+    // إخفاء رسالة الخطأ إذا كانت ظاهرة
+    const errorBanner = document.getElementById('msgBanner');
+    errorBanner.style.display = 'none';
+    
+    console.log('✅ تم إعادة تعيين النظام');
+    console.log('👤 المستخدمين:', users);
+    
+    // تعبئة الحقول تلقائياً
+    document.getElementById('email').value = 'admin@giftstar.kw';
+    document.getElementById('password').value = 'Admin@2024';
+}
+
+// =========================================
+// تعبئة بيانات الحساب
+// =========================================
+function fillCredentials(email, password) {
+    document.getElementById('email').value = email;
+    document.getElementById('password').value = password;
+    showNotification(`تم تعبئة بيانات ${email}`, 'success');
+}
+
+// =========================================
+// دالة تسجيل الدخول
+// =========================================
+function doLogin() {
+    console.log('🔐 محاولة تسجيل الدخول...');
+    
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     const banner = document.getElementById('msgBanner');
     const successBanner = document.getElementById('successBanner');
     const loginBtn = document.getElementById('loginBtn');
     
+    // إخفاء البانرات القديمة
     banner.style.display = 'none';
     successBanner.style.display = 'none';
     
+    // التحقق من المدخلات
     if (!email || !password) {
         banner.textContent = 'يرجى ملء جميع الحقول';
         banner.style.display = 'block';
         return;
     }
     
+    // تغيير نص الزر
+    const originalText = loginBtn.textContent;
     loginBtn.textContent = 'جاري تسجيل الدخول...';
     loginBtn.disabled = true;
     
-    const result = await login(email, password);
-    
-    if (result.success) {
+    try {
+        // قراءة المستخدمين من localStorage
+        let users = [];
+        const usersStr = localStorage.getItem('giftstar_users');
+        
+        if (usersStr) {
+            users = JSON.parse(usersStr);
+        } else {
+            console.log('لا يوجد مستخدمين، سيتم إنشاؤهم');
+            resetSystem();
+            users = JSON.parse(localStorage.getItem('giftstar_users') || '[]');
+        }
+        
+        console.log('المستخدمين المتاحين:', users);
+        
+        // البحث عن المستخدم
+        const user = users.find(u => u.email === email && u.password === password);
+        
+        if (!user) {
+            console.log('المستخدم غير موجود');
+            banner.textContent = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+            banner.style.display = 'block';
+            loginBtn.textContent = originalText;
+            loginBtn.disabled = false;
+            return;
+        }
+        
+        if (!user.verified) {
+            banner.textContent = 'الحساب غير مفعل';
+            banner.style.display = 'block';
+            loginBtn.textContent = originalText;
+            loginBtn.disabled = false;
+            return;
+        }
+        
+        // تسجيل الدخول ناجح
+        console.log('✅ تم تسجيل الدخول بنجاح:', user);
+        
+        // حفظ الجلسة
+        const sessionUser = {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            phone: user.phone
+        };
+        
+        sessionStorage.setItem('giftstar_user', JSON.stringify(sessionUser));
+        
+        // عرض رسالة النجاح
         successBanner.textContent = '✅ تم تسجيل الدخول بنجاح! جاري التحويل...';
         successBanner.style.display = 'block';
         
+        // التحويل بعد ثانية
         setTimeout(() => {
             const redirect = sessionStorage.getItem('giftstar_redirect_after_login') || 
-                           (result.user.role === 'admin' ? 'admin/index.html' : 'index.html');
+                           (user.role === 'admin' ? 'admin/index.html' : 'index.html');
+            
             sessionStorage.removeItem('giftstar_redirect_after_login');
+            console.log('🚀 التحويل إلى:', redirect);
             window.location.href = redirect;
         }, 1000);
-    } else {
-        banner.textContent = result.error;
+        
+    } catch (error) {
+        console.error('❌ خطأ:', error);
+        banner.textContent = 'حدث خطأ: ' + error.message;
         banner.style.display = 'block';
-        loginBtn.textContent = 'دخول';
+        loginBtn.textContent = originalText;
         loginBtn.disabled = false;
     }
+}
+
+// =========================================
+// إظهار الإشعارات
+// =========================================
+function showNotification(msg, type = 'success') {
+    const el = document.createElement('div');
+    el.className = 'notification';
+    el.textContent = msg;
+    el.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: ${type === 'success' ? '#5ec98a' : '#e05555'};
+        color: white;
+        padding: 12px 30px;
+        border-radius: 50px;
+        font-size: 14px;
+        font-weight: 600;
+        z-index: 10000;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        animation: slideDown 0.3s ease;
+    `;
+    document.body.appendChild(el);
+    setTimeout(() => {
+        el.style.animation = 'slideUp 0.3s ease';
+        setTimeout(() => el.remove(), 300);
+    }, 3000);
+}
+
+// =========================================
+// التحقق من وجود رسالة في الرابط
+// =========================================
+const params = new URLSearchParams(window.location.search);
+if (params.get('msg') === 'login_required') {
+    const banner = document.getElementById('msgBanner');
+    banner.textContent = 'يرجى تسجيل الدخول أولاً';
+    banner.style.display = 'block';
+}
+
+// =========================================
+// التهيئة
+// =========================================
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('📄 صفحة تسجيل الدخول جاهزة');
+    
+    // التحقق من وجود المستخدمين
+    const users = localStorage.getItem('giftstar_users');
+    if (!users) {
+        console.log('⚠️ لا يوجد مستخدمين، سيتم إنشاؤهم تلقائياً');
+        resetSystem();
+    } else {
+        console.log('✅ المستخدمين موجودين');
+    }
+    
+    // إضافة مستمع لزر Enter
+    document.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            doLogin();
+        }
+    });
+});
+
+// دوال للتصحيح في الكونسول
+window.checkUsers = function() {
+    const users = JSON.parse(localStorage.getItem('giftstar_users') || '[]');
+    console.log('👤 المستخدمين:', users);
 };
 
-window.resetSystem = function() {
+window.clearAll = function() {
     localStorage.clear();
     sessionStorage.clear();
     location.reload();
 };
-
-// عرض رسالة إذا تم التحويل من صفحة أخرى
-const params = new URLSearchParams(window.location.search);
-if (params.get('msg') === 'login_required') {
-    document.getElementById('msgBanner').textContent = 'يرجى تسجيل الدخول أولاً';
-    document.getElementById('msgBanner').style.display = 'block';
-}
-
-// إضافة مستمع لزر Enter
-document.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        doLogin();
-    }
-});
-
-// التحقق من تسجيل الدخول الحالي
-const currentUser = getCurrentUser();
-if (currentUser) {
-    window.location.href = 'index.html';
-}
 </script>
 </body>
 </html>
