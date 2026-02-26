@@ -1,207 +1,0 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تفاصيل المنتج - عطور Flavus</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-<header>
-  <div class="header-inner">
-    <a href="index.html" class="logo">Flavus <span></span></a>
-    <nav>
-      <a href="index.html">الرئيسية</a>
-      <a href="products.html" class="active">المنتجات</a>
-      <a href="products.html?cat=نسائي">نسائي</a>
-      <a href="products.html?cat=رجالي">رجالي</a>
-      <a href="products.html?cat=يونيسكس">يونيسكس</a>
-    </nav>
-    <div class="header-actions">
-      <a href="cart.html" class="btn-cart">
-        🛒 السلة
-        <span class="cart-badge cart-count" style="display:none">0</span>
-      </a>
-    </div>
-    <button class="burger"><span></span><span></span><span></span></button>
-  </div>
-</header>
-
-<div class="mobile-menu">
-  <a href="index.html">🏠 الرئيسية</a>
-  <a href="products.html">🌹 المنتجات</a>
-  <a href="cart.html">🛒 السلة</a>
-</div>
-
-<!-- BREADCRUMB -->
-<div style="padding:90px 0 0;background:var(--dark-2);border-bottom:1px solid var(--border-subtle)">
-  <div class="container" style="padding-top:24px;padding-bottom:16px">
-    <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted)">
-      <a href="index.html" style="color:var(--text-muted);text-decoration:none;hover:color:var(--orange)">الرئيسية</a>
-      <span>›</span>
-      <a href="products.html" style="color:var(--text-muted);text-decoration:none">المنتجات</a>
-      <span>›</span>
-      <span id="breadcrumb-name" style="color:var(--text-primary)">تحميل...</span>
-    </div>
-  </div>
-</div>
-
-<section>
-  <div class="container">
-    <div class="product-detail" id="product-detail">
-      <!-- Loaded by JS -->
-      <div style="grid-column:span 2;text-align:center;padding:80px 0;color:var(--text-muted)">
-        <div style="font-size:32px;margin-bottom:12px">🇰🇼🌹</div>
-        <p>جاري تحميل المنتج...</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- RELATED PRODUCTS -->
-<section style="background:var(--dark);border-top:1px solid var(--border-subtle)">
-  <div class="container">
-    <div class="section-header">
-      <div class="section-label">منتجات مشابهة</div>
-      <h2 class="section-title">قد يعجبك أيضاً</h2>
-    </div>
-    <div class="products-grid" id="related-grid"></div>
-  </div>
-</section>
-
-<footer>
-  <div class="container">
-    <div class="footer-bottom">
-      <p class="footer-copy">© 2025 عطور الخبير - الكويت. جميع الحقوق محفوظة.</p>
-      <p class="footer-copy" style="color:var(--orange)">💳 الدفع عند الاستلام فقط - الكويت</p>
-    </div>
-  </div>
-</footer>
-
-<div class="chat-widget">
-  <button class="chat-btn" aria-label="تحدث معنا">🇰🇼<span class="pulse"></span></button>
-  <div class="chat-box">
-    <div class="chat-header">
-      <div class="chat-avatar">🇰🇼</div>
-      <div><div class="chat-name">مساعد عطور الخبير - الكويت</div><div class="chat-status">متصل الآن</div></div>
-      <button class="chat-close">×</button>
-    </div>
-    <div class="chat-messages"></div>
-    <div class="chat-input-area">
-      <input type="text" class="chat-input" placeholder="اسألني عن هذا العطر..." dir="rtl">
-      <button class="chat-send">➤</button>
-    </div>
-  </div>
-</div>
-
-<script src="main.js"></script>
-<script>
-const urlParams = new URLSearchParams(window.location.search);
-const productId = parseInt(urlParams.get('id'));
-const product = PRODUCTS.find(p => p.id === productId);
-
-if (!product) {
-  document.getElementById('product-detail').innerHTML = '<div style="grid-column:span 2;text-align:center;padding:80px 0"><p style="color:var(--text-muted)">المنتج غير موجود</p><a href="products.html" class="btn-primary" style="margin-top:20px;display:inline-block">العودة للمنتجات</a></div>';
-} else {
-  document.title = `${product.name} - عطور الخبير - الكويت`;
-  document.getElementById('breadcrumb-name').textContent = product.name;
-  
-  const isOutOfStock = product.stock === 0;
-  
-  document.getElementById('product-detail').innerHTML = `
-    <div class="product-gallery">
-      <div class="main-image">
-        <img src="${product.imgs[0]}" alt="${product.name}" id="main-img">
-      </div>
-      <div class="thumb-row">
-        ${product.imgs.map((img, i) => `
-          <div class="thumb ${i === 0 ? 'active' : ''}" onclick="changeImg('${img}', this)">
-            <img src="${img}" alt="">
-          </div>`).join('')}
-      </div>
-    </div>
-    <div class="detail-info">
-      <div class="detail-category">${product.category}</div>
-      <h1 class="detail-title">${product.name}</h1>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-        <div style="color:var(--orange)">★★★★★</div>
-        <span style="font-size:13px;color:var(--text-muted)">(47 تقييم)</span>
-        <span class="product-badge" style="position:static;display:inline">${isOutOfStock ? 'نفذت الكمية' : product.badge || 'متوفر'}</span>
-      </div>
-      <div class="detail-price">
-        ${product.oldPrice ? `<span style="font-size:22px;color:var(--text-muted);text-decoration:line-through;font-weight:400">${product.oldPrice} د.ك</span> ` : ''}
-        ${product.price} <small style="font-size:18px;font-weight:400;color:var(--text-muted)">د.ك</small>
-      </div>
-      <p class="detail-desc">${product.desc}</p>
-      ${product.notes ? `
-        <div style="background:var(--dark-2);border:1px solid var(--border-subtle);border-radius:8px;padding:20px;margin-bottom:28px">
-          <h4 style="font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--orange);margin-bottom:12px">نوتات العطر</h4>
-          <p style="font-size:13px;color:var(--text-secondary);line-height:2">${product.notes}</p>
-        </div>` : ''}
-      <div class="size-options">
-        <span class="size-label">الحجم</span>
-        <div class="size-btns" id="size-btns">
-          ${product.sizes.map((s, i) => `<button class="size-btn ${i === 0 ? 'active' : ''}" onclick="selectSize('${s}', this)">${s}</button>`).join('')}
-        </div>
-      </div>
-      <div class="detail-actions">
-        <div class="qty-large">
-          <button class="qty-btn" onclick="changeQty(-1)">−</button>
-          <span class="qty-val" id="qty-val">1</span>
-          <button class="qty-btn" onclick="changeQty(1)">+</button>
-        </div>
-        <button class="btn-primary" style="flex:1" onclick="addToCartFromDetail()" ${isOutOfStock ? 'disabled style="opacity:0.5;cursor:not-allowed"' : ''}>
-          ${isOutOfStock ? '❌ نفذت الكمية' : '🛒 أضف للسلة'}
-        </button>
-      </div>
-      ${!isOutOfStock ? `
-        <a href="checkout.html" class="btn-outline" style="display:block;text-align:center;margin-top:12px" onclick="addToCartFromDetail()">⚡ اشتر الآن</a>` : ''}
-      <div style="margin-top:28px;padding-top:24px;border-top:1px solid var(--border-subtle)">
-        <div style="display:flex;gap:20px;flex-wrap:wrap">
-          <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
-            📦 <span>دفع عند الاستلام في الكويت</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
-            🔄 <span>إرجاع مجاني خلال 7 أيام</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-secondary)">
-            ✅ <span>أصالة مضمونة 100%</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  let selectedSize = product.sizes[0];
-  let qty = 1;
-
-  window.changeImg = (src, thumb) => {
-    document.getElementById('main-img').src = src;
-    document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
-    thumb.classList.add('active');
-  };
-
-  window.selectSize = (size, btn) => {
-    selectedSize = size;
-    document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-  };
-
-  window.changeQty = (dir) => {
-    qty = Math.max(1, qty + dir);
-    document.getElementById('qty-val').textContent = qty;
-  };
-
-  window.addToCartFromDetail = () => {
-    for (let i = 0; i < qty; i++) addToCart(product.id, selectedSize, 1);
-  };
-
-  // Related
-  const related = PRODUCTS.filter(p => p.id !== product.id && (p.category === product.category)).slice(0, 4);
-  document.getElementById('related-grid').innerHTML = related.map(createProductCard).join('');
-  setTimeout(initFadeIn, 100);
-}
-</script>
-</body>
-</html>
