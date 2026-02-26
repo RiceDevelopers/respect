@@ -377,27 +377,18 @@ function validateForm() {
 
   if (!name) { giftstar.showNotification('يرجى إدخال الاسم', 'error'); return false; }
   if (!phone) { giftstar.showNotification('يرجى إدخال رقم الهاتف', 'error'); return false; }
-  if (phone.length !== 10 || !phone.startsWith('05')) {
-    giftstar.showNotification('رقم الهاتف يجب أن يكون 10 أرقام ويبدأ بـ 05', 'error');
+  
+  // تعديل التحقق للأرقام الكويتية (8 أرقام تبدأ بـ 5 أو 6 أو 9)
+  if (phone.length !== 8 || !/^[569]\d{7}$/.test(phone)) {
+    giftstar.showNotification('رقم الهاتف يجب أن يكون 8 أرقام ويبدأ بـ 5 أو 6 أو 9', 'error');
     return false;
   }
+  
   if (!area) { giftstar.showNotification('يرجى اختيار المنطقة', 'error'); return false; }
   if (!address) { giftstar.showNotification('يرجى إدخال العنوان', 'error'); return false; }
   if (!selectedPayment) { giftstar.showNotification('يرجى اختيار طريقة الدفع', 'error'); return false; }
-
-  const method = paymentMethods.find(m => m.id === selectedPayment);
-  if (method && method.icon === 'card') {
-    const cardNum = document.getElementById('cardNum').value.replace(/\s/g, '');
-    const cardExp = document.getElementById('cardExp').value;
-    const cardCvv = document.getElementById('cardCvv').value;
-    const cardName = document.getElementById('cardName').value.trim();
-    
-    if (cardNum.length !== 16) { giftstar.showNotification('رقم البطاقة غير صحيح', 'error'); return false; }
-    if (!cardExp || !cardExp.includes('/')) { giftstar.showNotification('تاريخ الانتهاء غير صحيح', 'error'); return false; }
-    if (cardCvv.length !== 3) { giftstar.showNotification('رمز CVV غير صحيح', 'error'); return false; }
-    if (!cardName) { giftstar.showNotification('يرجى إدخال اسم حامل البطاقة', 'error'); return false; }
-  }
-
+}
+  
   return true;
 }
 
