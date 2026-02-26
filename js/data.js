@@ -1,9 +1,36 @@
 // =========================================
-// Gift Star - Data Store (النسخة النهائية المتكاملة)
+// Gift Star - Data Store مع Firebase (الإصدار النهائي)
 // =========================================
 
 // =========================================
-// دوال التخزين الأساسية
+// Firebase Configuration
+// =========================================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+import { getFirestore, collection, addDoc, query, where, getDocs, doc, getDoc, updateDoc, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js";
+
+// Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyCtHnYZT8yq9tp7xaA7AyJQV4Ag4Wi1Yks",
+    authDomain: "gift-star-abf48.firebaseapp.com",
+    projectId: "gift-star-abf48",
+    storageBucket: "gift-star-abf48.firebasestorage.app",
+    messagingSenderId: "546782076914",
+    appId: "1:546782076914:web:3fb957a03c7e0501fc556b",
+    measurementId: "G-W6PKPSEWDZ"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+console.log('✅ Firebase initialized successfully');
+
+// =========================================
+// دوال التخزين المحلية (كـ Fallback)
 // =========================================
 function getItem(key, fallback = null) {
     try {
@@ -30,37 +57,6 @@ function setItem(key, value) {
 // =========================================
 function initData() {
     console.log('تهيئة البيانات...');
-    
-    // التحقق من وجود المستخدمين
-    let users = getItem('users', []);
-    if (users.length === 0) {
-        // إنشاء حساب المدير
-        users.push({
-            id: 1,
-            name: "مدير المتجر",
-            email: "admin@giftstar.kw",
-            password: "Admin@2024",
-            role: "admin",
-            verified: true,
-            createdAt: new Date().toISOString(),
-            phone: "51234567"
-        });
-        
-        // إنشاء مستخدم تجريبي
-        users.push({
-            id: 2,
-            name: "أحمد محمد",
-            email: "ahmed@test.com",
-            password: "12345678",
-            role: "customer",
-            verified: true,
-            createdAt: new Date().toISOString(),
-            phone: "51234568"
-        });
-        
-        setItem('users', users);
-        console.log('تم إنشاء المستخدمين');
-    }
     
     // التحقق من وجود المنتجات
     let products = getItem('products', []);
@@ -107,13 +103,6 @@ function initData() {
         console.log('تم إنشاء المنتجات');
     }
     
-    // التحقق من وجود الطلبات
-    let orders = getItem('orders', []);
-    if (orders.length === 0) {
-        setItem('orders', []);
-        console.log('تم إنشاء قائمة الطلبات');
-    }
-    
     // التحقق من وجود العروض
     let promos = getItem('promos', []);
     if (promos.length === 0) {
@@ -135,7 +124,7 @@ function initData() {
 }
 
 // =========================================
-// نظام المستخدمين
+// نظام المصادقة مع Firebase
 // =========================================
 function getCurrentUser() {
     try {
@@ -147,43 +136,66 @@ function getCurrentUser() {
     }
 }
 
-function login(email, password) {
+async function login(email, password) {
     console.log('محاولة تسجيل الدخول:', email);
     
-    const users = getItem('users', []);
-    const user = users.find(u => u.email === email && u.password === password);
-    
-    if (!user) {
+    try {
+        // تسجيل الدخول عبر Firebase
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const firebaseUser = userCredential.user;
+        
+        // إنشاء كائن المستخدم للتطبيق
+        const sessionUser = {
+            id: firebaseUser.uid,
+            name: firebaseUser.displayName || email.split('@')[0],
+            email: firebaseUser.email,
+            role: email === 'admin@giftstar.kw' ? 'admin' : 'customer',
+            phone: firebaseUser.phoneNumber || ''
+        };
+        
+        sessionStorage.setItem('giftstar_user', JSON.stringify(sessionUser));
+        
+        // تحديث السلة بعد تسجيل الدخول
+        migrateCart();
+        
+        return { success: true, user: sessionUser };
+        
+    } catch (error) {
+        console.error('خطأ في تسجيل الدخول:', error);
+        
+        // Fallback إلى localStorage للتجربة
+        const users = getItem('users', []);
+        const user = users.find(u => u.email === email && u.password === password);
+        
+        if (user) {
+            const sessionUser = {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                phone: user.phone
+            };
+            sessionStorage.setItem('giftstar_user', JSON.stringify(sessionUser));
+            migrateCart();
+            return { success: true, user: sessionUser };
+        }
+        
         return { success: false, error: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' };
     }
-    
-    if (!user.verified) {
-        return { success: false, error: 'الحساب غير مفعل' };
-    }
-    
-    const sessionUser = {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        phone: user.phone
-    };
-    
-    sessionStorage.setItem('giftstar_user', JSON.stringify(sessionUser));
-    
-    // تحديث السلة بعد تسجيل الدخول
-    migrateCart();
-    
-    return { success: true, user: sessionUser };
 }
 
-function logout() {
+async function logout() {
+    try {
+        await signOut(auth);
+    } catch (e) {
+        console.error('خطأ في تسجيل الخروج من Firebase:', e);
+    }
     sessionStorage.removeItem('giftstar_user');
     window.location.href = 'index.html';
 }
 
 // =========================================
-// نظام السلة المحسن
+// نظام السلة
 // =========================================
 function getCart() {
     try {
@@ -317,16 +329,59 @@ function migrateCart() {
 }
 
 // =========================================
-// نظام الطلبات المحسن
+// نظام الطلبات مع Firebase (الأهم هنا!)
 // =========================================
-function createOrder(orderData) {
+async function createOrder(orderData) {
     try {
         const user = getCurrentUser();
         if (!user) {
             return { success: false, error: 'يجب تسجيل الدخول أولاً' };
         }
         
-        let orders = getItem('orders', []);
+        // إنشاء كائن الطلب
+        const order = {
+            id: 'GS' + Date.now() + '-' + Math.floor(Math.random() * 10000),
+            ...orderData,
+            userId: user.id,
+            userEmail: user.email,
+            date: new Date().toLocaleDateString('ar-KW'),
+            time: new Date().toLocaleTimeString('ar-KW'),
+            status: 'new',
+            statusHistory: [
+                {
+                    status: 'new',
+                    date: new Date().toISOString(),
+                    note: 'تم استلام الطلب بنجاح'
+                }
+            ],
+            createdAt: serverTimestamp(),
+            lastUpdate: new Date().toISOString()
+        };
+        
+        // حفظ الطلب في Firebase
+        const docRef = await addDoc(collection(db, "orders"), order);
+        console.log('✅ تم حفظ الطلب في Firebase:', docRef.id);
+        
+        // حفظ نسخة في localStorage كاحتياطي
+        const localOrders = getItem('orders', []);
+        localOrders.unshift(order);
+        setItem('orders', localOrders);
+        
+        localStorage.setItem('giftstar_last_order', JSON.stringify(order));
+        sessionStorage.setItem('giftstar_last_order', JSON.stringify(order));
+        
+        clearCart();
+        
+        window.dispatchEvent(new CustomEvent('orderCreated', { detail: order }));
+        
+        return { success: true, order };
+        
+    } catch (error) {
+        console.error('❌ خطأ في حفظ الطلب في Firebase:', error);
+        
+        // Fallback إلى localStorage
+        const user = getCurrentUser();
+        const localOrders = getItem('orders', []);
         
         const order = {
             id: 'GS' + Date.now() + '-' + Math.floor(Math.random() * 10000),
@@ -347,66 +402,133 @@ function createOrder(orderData) {
             lastUpdate: new Date().toISOString()
         };
         
-        orders.unshift(order);
-        setItem('orders', orders);
+        localOrders.unshift(order);
+        setItem('orders', localOrders);
         
         localStorage.setItem('giftstar_last_order', JSON.stringify(order));
         sessionStorage.setItem('giftstar_last_order', JSON.stringify(order));
         
         clearCart();
         
-        window.dispatchEvent(new CustomEvent('orderCreated', { detail: order }));
-        
-        console.log('تم إنشاء الطلب بنجاح:', order.id);
-        
-        return { success: true, order };
-        
-    } catch (e) {
-        console.error('خطأ في إنشاء الطلب:', e);
-        return { success: false, error: e.message };
+        return { success: true, order, fallback: true };
     }
 }
 
-function getUserOrders() {
+async function getUserOrders() {
     const user = getCurrentUser();
     if (!user) return [];
     
-    const orders = getItem('orders', []);
-    return orders.filter(o => o.userId === user.id || o.userEmail === user.email);
-}
-
-function getAllOrders() {
-    return getItem('orders', []);
-}
-
-function getOrderById(orderId) {
-    const orders = getItem('orders', []);
-    return orders.find(o => o.id === orderId);
-}
-
-function updateOrderStatus(orderId, newStatus, note = '') {
-    let orders = getItem('orders', []);
-    const index = orders.findIndex(o => o.id === orderId);
-    
-    if (index === -1) return false;
-    
-    orders[index].status = newStatus;
-    orders[index].lastUpdate = new Date().toISOString();
-    
-    if (!orders[index].statusHistory) {
-        orders[index].statusHistory = [];
+    try {
+        // جلب الطلبات من Firebase
+        const q = query(
+            collection(db, "orders"), 
+            where("userId", "==", user.id),
+            orderBy("createdAt", "desc")
+        );
+        
+        const querySnapshot = await getDocs(q);
+        const orders = [];
+        querySnapshot.forEach((doc) => {
+            orders.push(doc.data());
+        });
+        
+        console.log(`✅ تم جلب ${orders.length} طلب من Firebase`);
+        return orders;
+        
+    } catch (error) {
+        console.error('❌ خطأ في جلب الطلبات من Firebase:', error);
+        
+        // Fallback إلى localStorage
+        const orders = getItem('orders', []);
+        return orders.filter(o => o.userId === user.id || o.userEmail === user.email);
     }
-    
-    orders[index].statusHistory.push({
-        status: newStatus,
-        date: new Date().toISOString(),
-        note: note || `تم تحديث الحالة إلى ${newStatus}`
-    });
-    
-    setItem('orders', orders);
-    window.dispatchEvent(new CustomEvent('orderUpdated', { detail: orders[index] }));
-    
-    return true;
+}
+
+async function getAllOrders() {
+    try {
+        // جلب جميع الطلبات من Firebase (للمدير)
+        const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
+        const querySnapshot = await getDocs(q);
+        const orders = [];
+        querySnapshot.forEach((doc) => {
+            orders.push(doc.data());
+        });
+        
+        return orders;
+        
+    } catch (error) {
+        console.error('خطأ في جلب الطلبات:', error);
+        return getItem('orders', []);
+    }
+}
+
+async function getOrderById(orderId) {
+    try {
+        // البحث في Firebase أولاً
+        const q = query(collection(db, "orders"), where("id", "==", orderId));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+            return querySnapshot.docs[0].data();
+        }
+        
+        // إذا لم نجد، نبحث في localStorage
+        const orders = getItem('orders', []);
+        return orders.find(o => o.id === orderId);
+        
+    } catch (error) {
+        console.error('خطأ في جلب الطلب:', error);
+        const orders = getItem('orders', []);
+        return orders.find(o => o.id === orderId);
+    }
+}
+
+async function updateOrderStatus(orderId, newStatus, note = '') {
+    try {
+        // تحديث في Firebase
+        const q = query(collection(db, "orders"), where("id", "==", orderId));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+            const docRef = querySnapshot.docs[0].ref;
+            await updateDoc(docRef, {
+                status: newStatus,
+                lastUpdate: new Date().toISOString(),
+                statusHistory: firebase.firestore.FieldValue.arrayUnion({
+                    status: newStatus,
+                    date: new Date().toISOString(),
+                    note: note || `تم تحديث الحالة إلى ${newStatus}`
+                })
+            });
+        }
+        
+        // تحديث في localStorage
+        let orders = getItem('orders', []);
+        const index = orders.findIndex(o => o.id === orderId);
+        
+        if (index !== -1) {
+            orders[index].status = newStatus;
+            orders[index].lastUpdate = new Date().toISOString();
+            
+            if (!orders[index].statusHistory) {
+                orders[index].statusHistory = [];
+            }
+            
+            orders[index].statusHistory.push({
+                status: newStatus,
+                date: new Date().toISOString(),
+                note: note || `تم تحديث الحالة إلى ${newStatus}`
+            });
+            
+            setItem('orders', orders);
+        }
+        
+        return true;
+        
+    } catch (error) {
+        console.error('خطأ في تحديث الطلب:', error);
+        return false;
+    }
 }
 
 // =========================================
@@ -447,8 +569,8 @@ function getPromos() {
 // =========================================
 // الإحصائيات
 // =========================================
-function getDashboardStats() {
-    const orders = getItem('orders', []);
+async function getDashboardStats() {
+    const orders = await getAllOrders();
     const products = getItem('products', []);
     const users = getItem('users', []);
     
@@ -515,7 +637,7 @@ function showNotification(msg, type = 'success', duration = 3000) {
 // التهيئة والمزامنة بين الصفحات
 // =========================================
 function initializeApp() {
-    console.log('بدء تشغيل نظام Gift Star...');
+    console.log('بدء تشغيل نظام Gift Star مع Firebase...');
     
     initData();
     updateHeader();
@@ -539,15 +661,11 @@ function initializeApp() {
         updateCartBadge();
     });
     
-    window.addEventListener('orderCreated', function(e) {
-        console.log('تم إنشاء طلب جديد:', e.detail);
-    });
-    
     setInterval(() => {
         updateCartBadge();
     }, 2000);
     
-    console.log('نظام Gift Star جاهز للعمل');
+    console.log('نظام Gift Star مع Firebase جاهز للعمل');
 }
 
 function updateHeader() {
@@ -626,6 +744,7 @@ window.formatKWD = formatKWD;
 window.showNotification = showNotification;
 window.updateHeader = updateHeader;
 
+// بدء التطبيق
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeApp);
 } else {
