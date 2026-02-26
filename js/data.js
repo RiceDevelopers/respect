@@ -1,206 +1,9 @@
 // =========================================
-// Gift Star - Data Store مع Firebase وإشعارات فورية
+// Gift Star - Data Store (نسخة مبسطة بدون Firebase)
 // =========================================
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { getFirestore, collection, addDoc, query, where, getDocs, doc, getDoc, updateDoc, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
-import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-messaging.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js";
-
-// Firebase configuration
-const firebaseConfig = {
-    apiKey: "AIzaSyCtHnYZT8yq9tp7xaA7AyJQV4Ag4Wi1Yks",
-    authDomain: "gift-star-abf48.firebaseapp.com",
-    projectId: "gift-star-abf48",
-    storageBucket: "gift-star-abf48.firebasestorage.app",
-    messagingSenderId: "546782076914",
-    appId: "1:546782076914:web:3fb957a03c7e0501fc556b",
-    measurementId: "G-W6PKPSEWDZ"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const db = getFirestore(app);
-const auth = getAuth(app);
-const messaging = getMessaging(app);
-
-// Web Push Key (من إعدادات المشروع)
-const VAPID_KEY = "BNw1PdYdUT5h8YZxwNPwsHb77s5C2L0IwMhyr0zlHUyEJs4gpgx5tqfje6BgBgZo6QssvaekMAQMYNl5r7E70G4";
-
-console.log('✅ Firebase initialized successfully');
-
 // =========================================
-// نظام الإشعارات الفورية (Web Push)
-// =========================================
-
-// طلب إذن الإشعارات
-async function requestNotificationPermission() {
-    try {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-            console.log('✅ إذن الإشعارات مقبول');
-            
-            // الحصول على FCM Token
-            const token = await getToken(messaging, { vapidKey: VAPID_KEY });
-            console.log('✅ FCM Token:', token);
-            
-            // حفظ التوكن للمستخدم الحالي
-            const user = getCurrentUser();
-            if (user) {
-                saveUserToken(user.id, token);
-            }
-            
-            return token;
-        } else {
-            console.log('❌ تم رفض الإشعارات');
-            return null;
-        }
-    } catch (error) {
-        console.error('❌ خطأ في طلب الإشعارات:', error);
-        return null;
-    }
-}
-
-// حفظ توكن المستخدم
-async function saveUserToken(userId, token) {
-    try {
-        const tokens = getItem('notification_tokens', []);
-        const existingIndex = tokens.findIndex(t => t.userId === userId);
-        
-        if (existingIndex !== -1) {
-            tokens[existingIndex].token = token;
-            tokens[existingIndex].updatedAt = new Date().toISOString();
-        } else {
-            tokens.push({
-                userId,
-                token,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-            });
-        }
-        
-        setItem('notification_tokens', tokens);
-        
-        // حفظ في Firebase أيضاً
-        await addDoc(collection(db, "notification_tokens"), {
-            userId,
-            token,
-            createdAt: serverTimestamp(),
-            userAgent: navigator.userAgent
-        });
-        
-        return true;
-    } catch (error) {
-        console.error('خطأ في حفظ التوكن:', error);
-        return false;
-    }
-}
-
-// إرسال إشعار للمدير عند طلب جديد
-async function sendAdminNotification(order) {
-    try {
-        // جلب جميع توكنات المديرين
-        const users = getItem('users', []);
-        const admins = users.filter(u => u.role === 'admin');
-        
-        const tokens = getItem('notification_tokens', []);
-        const adminTokens = tokens.filter(t => 
-            admins.some(a => a.id === t.userId)
-        );
-        
-        // إرسال الإشعار لكل مدير
-        for (const adminToken of adminTokens) {
-            await sendPushNotification(adminToken.token, {
-                title: '🛍️ طلب جديد',
-                body: `طلب جديد بقيمة ${formatKWD(order.total)} من ${order.customer.name}`,
-                icon: '/logo.png',
-                badge: '/badge.png',
-                data: {
-                    orderId: order.id,
-                    url: `/admin/index.html?order=${order.id}`
-                }
-            });
-        }
-        
-        console.log(`✅ تم إرسال إشعار لـ ${adminTokens.length} مدير`);
-        
-    } catch (error) {
-        console.error('❌ خطأ في إرسال إشعار للمدير:', error);
-    }
-}
-
-// إرسال إشعار للمستخدم عند تحديث الطلب
-async function sendUserNotification(userId, order, status) {
-    try {
-        const tokens = getItem('notification_tokens', []);
-        const userToken = tokens.find(t => t.userId === userId);
-        
-        if (!userToken) return;
-        
-        const statusMessages = {
-            'new': 'تم استلام طلبك بنجاح',
-            'processing': 'طلبك قيد التجهيز',
-            'delivered': 'تم توصيل طلبك',
-            'cancelled': 'تم إلغاء الطلب'
-        };
-        
-        await sendPushNotification(userToken.token, {
-            title: '📦 تحديث حالة الطلب',
-            body: statusMessages[status] || `تم تحديث حالة الطلب إلى ${status}`,
-            icon: '/logo.png',
-            badge: '/badge.png',
-            data: {
-                orderId: order.id,
-                url: `/receipt.html?order=${order.id}`
-            }
-        });
-        
-    } catch (error) {
-        console.error('خطأ في إرسال إشعار للمستخدم:', error);
-    }
-}
-
-// إرسال الإشعار الفعلي (هذه دالة مساعدة، في الواقع سنستخدم Firebase Cloud Messaging)
-async function sendPushNotification(token, payload) {
-    // هذا الكود سيعمل مع FCM
-    // للتبسيط، نستخدم الإشعارات المحلية
-    if (Notification.permission === 'granted') {
-        new Notification(payload.title, {
-            body: payload.body,
-            icon: payload.icon,
-            badge: payload.badge,
-            data: payload.data
-        });
-    }
-}
-
-// الاستماع للإشعارات أثناء تشغيل التطبيق
-function setupMessageListener() {
-    onMessage(messaging, (payload) => {
-        console.log('📨 إشعار جديد:', payload);
-        
-        // عرض الإشعار
-        if (Notification.permission === 'granted') {
-            new Notification(payload.notification.title, {
-                body: payload.notification.body,
-                icon: payload.notification.icon,
-                badge: payload.notification.badge,
-                data: payload.data
-            });
-        }
-        
-        // تحديث الصفحة إذا كنا في صفحة الطلبات
-        if (window.location.pathname.includes('my-orders') || 
-            window.location.pathname.includes('admin')) {
-            setTimeout(() => location.reload(), 2000);
-        }
-    });
-}
-
-// =========================================
-// دوال التخزين المحلية (كـ Fallback)
+// دوال التخزين الأساسية
 // =========================================
 function getItem(key, fallback = null) {
     try {
@@ -231,32 +34,30 @@ function initData() {
     // التحقق من وجود المستخدمين
     let users = getItem('users', []);
     if (users.length === 0) {
-        // إنشاء حساب المدير
-        users.push({
-            id: 1,
-            name: "مدير المتجر",
-            email: "admin@giftstar.kw",
-            password: "Admin@2024",
-            role: "admin",
-            verified: true,
-            createdAt: new Date().toISOString(),
-            phone: "51234567"
-        });
-        
-        // إنشاء مستخدم تجريبي
-        users.push({
-            id: 2,
-            name: "أحمد محمد",
-            email: "ahmed@test.com",
-            password: "12345678",
-            role: "customer",
-            verified: true,
-            createdAt: new Date().toISOString(),
-            phone: "51234568"
-        });
-        
+        users = [
+            {
+                id: 1,
+                name: "مدير المتجر",
+                email: "admin@giftstar.kw",
+                password: "Admin@2024",
+                role: "admin",
+                verified: true,
+                createdAt: new Date().toISOString(),
+                phone: "51234567"
+            },
+            {
+                id: 2,
+                name: "أحمد محمد",
+                email: "ahmed@test.com",
+                password: "12345678",
+                role: "customer",
+                verified: true,
+                createdAt: new Date().toISOString(),
+                phone: "51234568"
+            }
+        ];
         setItem('users', users);
-        console.log('تم إنشاء المستخدمين');
+        console.log('✅ تم إنشاء المستخدمين');
     }
     
     // التحقق من وجود المنتجات
@@ -301,14 +102,14 @@ function initData() {
             }
         ];
         setItem('products', products);
-        console.log('تم إنشاء المنتجات');
+        console.log('✅ تم إنشاء المنتجات');
     }
     
     // التحقق من وجود الطلبات
     let orders = getItem('orders', []);
     if (orders.length === 0) {
         setItem('orders', []);
-        console.log('تم إنشاء قائمة الطلبات');
+        console.log('✅ تم إنشاء قائمة الطلبات');
     }
     
     // التحقق من وجود العروض
@@ -325,14 +126,14 @@ function initData() {
             }
         ];
         setItem('promos', promos);
-        console.log('تم إنشاء العروض');
+        console.log('✅ تم إنشاء العروض');
     }
     
-    console.log('تم تهيئة البيانات بنجاح');
+    console.log('✅ تم تهيئة البيانات بنجاح');
 }
 
 // =========================================
-// نظام المصادقة مع Firebase
+// نظام المستخدمين
 // =========================================
 function getCurrentUser() {
     try {
@@ -344,64 +145,30 @@ function getCurrentUser() {
     }
 }
 
-async function login(email, password) {
+function login(email, password) {
     console.log('محاولة تسجيل الدخول:', email);
     
-    try {
-        // تسجيل الدخول عبر Firebase
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const firebaseUser = userCredential.user;
-        
-        // إنشاء كائن المستخدم للتطبيق
-        const sessionUser = {
-            id: firebaseUser.uid,
-            name: firebaseUser.displayName || email.split('@')[0],
-            email: firebaseUser.email,
-            role: email === 'admin@giftstar.kw' ? 'admin' : 'customer',
-            phone: firebaseUser.phoneNumber || ''
-        };
-        
-        sessionStorage.setItem('giftstar_user', JSON.stringify(sessionUser));
-        
-        // تحديث السلة بعد تسجيل الدخول
-        migrateCart();
-        
-        // طلب إذن الإشعارات
-        requestNotificationPermission();
-        
-        return { success: true, user: sessionUser };
-        
-    } catch (error) {
-        console.error('خطأ في تسجيل الدخول:', error);
-        
-        // Fallback إلى localStorage للتجربة
-        const users = getItem('users', []);
-        const user = users.find(u => u.email === email && u.password === password);
-        
-        if (user) {
-            const sessionUser = {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                phone: user.phone
-            };
-            sessionStorage.setItem('giftstar_user', JSON.stringify(sessionUser));
-            migrateCart();
-            requestNotificationPermission();
-            return { success: true, user: sessionUser };
-        }
-        
+    const users = getItem('users', []);
+    const user = users.find(u => u.email === email && u.password === password);
+    
+    if (!user) {
         return { success: false, error: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' };
     }
+    
+    const sessionUser = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        phone: user.phone
+    };
+    
+    sessionStorage.setItem('giftstar_user', JSON.stringify(sessionUser));
+    
+    return { success: true, user: sessionUser };
 }
 
-async function logout() {
-    try {
-        await signOut(auth);
-    } catch (e) {
-        console.error('خطأ في تسجيل الخروج من Firebase:', e);
-    }
+function logout() {
     sessionStorage.removeItem('giftstar_user');
     window.location.href = 'index.html';
 }
@@ -518,39 +285,18 @@ function updateCartBadge() {
     }
 }
 
-function migrateCart() {
-    const user = getCurrentUser();
-    if (!user) return;
-    
-    const guestCart = JSON.parse(localStorage.getItem('giftstar_cart') || '[]');
-    if (guestCart.length > 0) {
-        let userCart = getCart();
-        
-        guestCart.forEach(guestItem => {
-            const existing = userCart.find(item => item.id === guestItem.id);
-            if (existing) {
-                existing.qty += guestItem.qty;
-            } else {
-                userCart.push(guestItem);
-            }
-        });
-        
-        saveCart(userCart);
-        localStorage.removeItem('giftstar_cart');
-    }
-}
-
 // =========================================
-// نظام الطلبات مع Firebase والإشعارات
+// نظام الطلبات
 // =========================================
-async function createOrder(orderData) {
+function createOrder(orderData) {
     try {
         const user = getCurrentUser();
         if (!user) {
             return { success: false, error: 'يجب تسجيل الدخول أولاً' };
         }
         
-        // إنشاء كائن الطلب
+        const orders = getItem('orders', []);
+        
         const order = {
             id: 'GS' + Date.now() + '-' + Math.floor(Math.random() * 10000),
             ...orderData,
@@ -566,197 +312,68 @@ async function createOrder(orderData) {
                     note: 'تم استلام الطلب بنجاح'
                 }
             ],
-            createdAt: serverTimestamp(),
-            lastUpdate: new Date().toISOString()
+            createdAt: new Date().toISOString()
         };
         
-        // حفظ الطلب في Firebase
-        const docRef = await addDoc(collection(db, "orders"), order);
-        console.log('✅ تم حفظ الطلب في Firebase:', docRef.id);
-        
-        // حفظ نسخة في localStorage كاحتياطي
-        const localOrders = getItem('orders', []);
-        localOrders.unshift(order);
-        setItem('orders', localOrders);
+        orders.unshift(order);
+        setItem('orders', orders);
         
         localStorage.setItem('giftstar_last_order', JSON.stringify(order));
         sessionStorage.setItem('giftstar_last_order', JSON.stringify(order));
-        
-        // إرسال إشعار للمدير
-        await sendAdminNotification(order);
         
         clearCart();
         
         window.dispatchEvent(new CustomEvent('orderCreated', { detail: order }));
         
+        console.log('✅ تم إنشاء الطلب:', order.id);
+        
         return { success: true, order };
         
     } catch (error) {
-        console.error('❌ خطأ في حفظ الطلب في Firebase:', error);
-        
-        // Fallback إلى localStorage
-        const user = getCurrentUser();
-        const localOrders = getItem('orders', []);
-        
-        const order = {
-            id: 'GS' + Date.now() + '-' + Math.floor(Math.random() * 10000),
-            ...orderData,
-            userId: user.id,
-            userEmail: user.email,
-            date: new Date().toLocaleDateString('ar-KW'),
-            time: new Date().toLocaleTimeString('ar-KW'),
-            status: 'new',
-            statusHistory: [
-                {
-                    status: 'new',
-                    date: new Date().toISOString(),
-                    note: 'تم استلام الطلب بنجاح'
-                }
-            ],
-            createdAt: new Date().toISOString(),
-            lastUpdate: new Date().toISOString()
-        };
-        
-        localOrders.unshift(order);
-        setItem('orders', localOrders);
-        
-        localStorage.setItem('giftstar_last_order', JSON.stringify(order));
-        sessionStorage.setItem('giftstar_last_order', JSON.stringify(order));
-        
-        // إرسال إشعار للمدير (محلي)
-        sendAdminNotification(order);
-        
-        clearCart();
-        
-        return { success: true, order, fallback: true };
+        console.error('❌ خطأ في إنشاء الطلب:', error);
+        return { success: false, error: error.message };
     }
 }
 
-async function getUserOrders() {
+function getUserOrders() {
     const user = getCurrentUser();
     if (!user) return [];
     
-    try {
-        // جلب الطلبات من Firebase
-        const q = query(
-            collection(db, "orders"), 
-            where("userId", "==", user.id),
-            orderBy("createdAt", "desc")
-        );
-        
-        const querySnapshot = await getDocs(q);
-        const orders = [];
-        querySnapshot.forEach((doc) => {
-            orders.push(doc.data());
-        });
-        
-        console.log(`✅ تم جلب ${orders.length} طلب من Firebase`);
-        return orders;
-        
-    } catch (error) {
-        console.error('❌ خطأ في جلب الطلبات من Firebase:', error);
-        
-        // Fallback إلى localStorage
-        const orders = getItem('orders', []);
-        return orders.filter(o => o.userId === user.id || o.userEmail === user.email);
-    }
+    const orders = getItem('orders', []);
+    return orders.filter(o => o.userId === user.id || o.userEmail === user.email);
 }
 
-async function getAllOrders() {
-    try {
-        // جلب جميع الطلبات من Firebase (للمدير)
-        const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
-        const querySnapshot = await getDocs(q);
-        const orders = [];
-        querySnapshot.forEach((doc) => {
-            orders.push(doc.data());
-        });
-        
-        return orders;
-        
-    } catch (error) {
-        console.error('خطأ في جلب الطلبات:', error);
-        return getItem('orders', []);
-    }
+function getAllOrders() {
+    return getItem('orders', []);
 }
 
-async function getOrderById(orderId) {
-    try {
-        // البحث في Firebase أولاً
-        const q = query(collection(db, "orders"), where("id", "==", orderId));
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-            return querySnapshot.docs[0].data();
-        }
-        
-        // إذا لم نجد، نبحث في localStorage
-        const orders = getItem('orders', []);
-        return orders.find(o => o.id === orderId);
-        
-    } catch (error) {
-        console.error('خطأ في جلب الطلب:', error);
-        const orders = getItem('orders', []);
-        return orders.find(o => o.id === orderId);
-    }
+function getOrderById(orderId) {
+    const orders = getItem('orders', []);
+    return orders.find(o => o.id === orderId);
 }
 
-async function updateOrderStatus(orderId, newStatus, note = '') {
-    try {
-        // تحديث في Firebase
-        const q = query(collection(db, "orders"), where("id", "==", orderId));
-        const querySnapshot = await getDocs(q);
-        
-        let order = null;
-        
-        if (!querySnapshot.empty) {
-            const docRef = querySnapshot.docs[0].ref;
-            await updateDoc(docRef, {
-                status: newStatus,
-                lastUpdate: new Date().toISOString(),
-                statusHistory: arrayUnion({
-                    status: newStatus,
-                    date: new Date().toISOString(),
-                    note: note || `تم تحديث الحالة إلى ${newStatus}`
-                })
-            });
-            
-            order = querySnapshot.docs[0].data();
-        }
-        
-        // تحديث في localStorage
-        let orders = getItem('orders', []);
-        const index = orders.findIndex(o => o.id === orderId);
-        
-        if (index !== -1) {
-            orders[index].status = newStatus;
-            orders[index].lastUpdate = new Date().toISOString();
-            
-            if (!orders[index].statusHistory) {
-                orders[index].statusHistory = [];
-            }
-            
-            orders[index].statusHistory.push({
-                status: newStatus,
-                date: new Date().toISOString(),
-                note: note || `تم تحديث الحالة إلى ${newStatus}`
-            });
-            
-            setItem('orders', orders);
-            order = orders[index];
-        }
-        
-        // إرسال إشعار للمستخدم
-        if (order) {
-            await sendUserNotification(order.userId, order, newStatus);
-        }
-        
-        return true;
-        
-    } catch (error) {
-        console.error('خطأ في تحديث الطلب:', error);
-        return false;
+function updateOrderStatus(orderId, newStatus, note = '') {
+    const orders = getItem('orders', []);
+    const index = orders.findIndex(o => o.id === orderId);
+    
+    if (index === -1) return false;
+    
+    orders[index].status = newStatus;
+    orders[index].lastUpdate = new Date().toISOString();
+    
+    if (!orders[index].statusHistory) {
+        orders[index].statusHistory = [];
     }
+    
+    orders[index].statusHistory.push({
+        status: newStatus,
+        date: new Date().toISOString(),
+        note: note || `تم تحديث الحالة إلى ${newStatus}`
+    });
+    
+    setItem('orders', orders);
+    
+    return true;
 }
 
 // =========================================
@@ -795,31 +412,6 @@ function getPromos() {
 }
 
 // =========================================
-// الإحصائيات
-// =========================================
-async function getDashboardStats() {
-    const orders = await getAllOrders();
-    const products = getItem('products', []);
-    const users = getItem('users', []);
-    
-    const today = new Date().toLocaleDateString('ar-KW');
-    const todayOrders = orders.filter(o => o.date === today);
-    
-    const totalRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
-    const todayRevenue = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
-    
-    return {
-        totalOrders: orders.length,
-        todayOrders: todayOrders.length,
-        totalProducts: products.filter(p => p.active).length,
-        totalUsers: users.filter(u => u.role === 'customer').length,
-        totalRevenue,
-        todayRevenue,
-        averageOrderValue: orders.length ? (totalRevenue / orders.length).toFixed(3) : 0
-    };
-}
-
-// =========================================
 // دوال مساعدة
 // =========================================
 function formatKWD(amount) {
@@ -831,9 +423,6 @@ function formatKWD(amount) {
 }
 
 function showNotification(msg, type = 'success', duration = 3000) {
-    const oldNotifications = document.querySelectorAll('.notification');
-    oldNotifications.forEach(n => n.remove());
-    
     const el = document.createElement('div');
     el.className = 'notification ' + type;
     el.textContent = msg;
@@ -852,59 +441,13 @@ function showNotification(msg, type = 'success', duration = 3000) {
         box-shadow: 0 5px 20px rgba(0,0,0,0.2);
         animation: slideDown 0.3s ease;
     `;
-    
     document.body.appendChild(el);
-    
-    setTimeout(() => {
-        el.style.animation = 'slideUp 0.3s ease';
-        setTimeout(() => el.remove(), 300);
-    }, duration);
+    setTimeout(() => el.remove(), duration);
 }
 
 // =========================================
-// التهيئة والمزامنة بين الصفحات
+// التهيئة
 // =========================================
-function initializeApp() {
-    console.log('بدء تشغيل نظام Gift Star مع Firebase...');
-    
-    initData();
-    updateHeader();
-    
-    // إعداد مستمع الإشعارات
-    setupMessageListener();
-    
-    // طلب إذن الإشعارات إذا كان المستخدم مسجل الدخول
-    const user = getCurrentUser();
-    if (user) {
-        requestNotificationPermission();
-    }
-    
-    window.addEventListener('storage', function(e) {
-        if (e.key === 'giftstar_orders' || e.key === 'giftstar_last_order') {
-            console.log('تم تحديث الطلبات من صفحة أخرى');
-            if (window.location.pathname.includes('my-orders') || 
-                window.location.pathname.includes('admin')) {
-                location.reload();
-            }
-        }
-        
-        if (e.key && e.key.startsWith('giftstar_cart')) {
-            console.log('تم تحديث السلة من صفحة أخرى');
-            updateCartBadge();
-        }
-    });
-    
-    window.addEventListener('cartUpdated', function(e) {
-        updateCartBadge();
-    });
-    
-    setInterval(() => {
-        updateCartBadge();
-    }, 2000);
-    
-    console.log('نظام Gift Star مع Firebase جاهز للعمل');
-}
-
 function updateHeader() {
     const user = getCurrentUser();
     const loginBtn = document.getElementById('loginBtn');
@@ -921,6 +464,32 @@ function updateHeader() {
     }
     
     updateCartBadge();
+}
+
+function initializeApp() {
+    console.log('بدء تشغيل نظام Gift Star...');
+    
+    initData();
+    updateHeader();
+    
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'giftstar_orders' || e.key === 'giftstar_last_order') {
+            console.log('تم تحديث الطلبات من صفحة أخرى');
+            if (window.location.pathname.includes('my-orders')) {
+                location.reload();
+            }
+        }
+        
+        if (e.key && e.key.startsWith('giftstar_cart')) {
+            updateCartBadge();
+        }
+    });
+    
+    window.addEventListener('cartUpdated', function() {
+        updateCartBadge();
+    });
+    
+    console.log('✅ نظام Gift Star جاهز للعمل');
 }
 
 // =========================================
@@ -961,11 +530,9 @@ window.giftstar = {
     getProducts,
     getProductById,
     getPromos,
-    getDashboardStats,
     formatKWD,
     showNotification,
-    updateHeader,
-    requestNotificationPermission
+    updateHeader
 };
 
 window.getCurrentUser = getCurrentUser;
@@ -981,7 +548,6 @@ window.getOrderById = getOrderById;
 window.formatKWD = formatKWD;
 window.showNotification = showNotification;
 window.updateHeader = updateHeader;
-window.requestNotificationPermission = requestNotificationPermission;
 
 // بدء التطبيق
 if (document.readyState === 'loading') {
