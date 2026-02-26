@@ -27,6 +27,7 @@ import {
   getToken, 
   onMessage 
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-messaging.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCtHnYZT8yq9tp7xaA7AyJQV4Ag4Wi1Yks",
@@ -39,6 +40,7 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 const db = getFirestore(app);
 const auth = getAuth(app);
 const messaging = getMessaging(app);
@@ -55,6 +57,7 @@ function getItem(key, fallback = null) {
         const data = localStorage.getItem('giftstar_' + key);
         return data ? JSON.parse(data) : fallback;
     } catch (e) {
+        console.error('خطأ في القراءة:', e);
         return fallback;
     }
 }
@@ -64,6 +67,7 @@ function setItem(key, value) {
         localStorage.setItem('giftstar_' + key, JSON.stringify(value));
         return true;
     } catch (e) {
+        console.error('خطأ في الحفظ:', e);
         return false;
     }
 }
@@ -72,43 +76,56 @@ function setItem(key, value) {
 // تهيئة البيانات
 // =========================================
 function initData() {
+    console.log('تهيئة البيانات...');
+    
     let users = getItem('users', []);
     if (users.length === 0) {
         users = [
-            { id: 1, name: "مدير المتجر", email: "admin@giftstar.kw", password: "Admin@2024", role: "admin", verified: true, phone: "51234567" },
-            { id: 2, name: "أحمد محمد", email: "ahmed@test.com", password: "12345678", role: "customer", verified: true, phone: "51234568" }
+            { id: 1, name: "مدير المتجر", email: "admin@giftstar.kw", password: "Admin@2024", role: "admin", verified: true, createdAt: new Date().toISOString(), phone: "51234567" },
+            { id: 2, name: "أحمد محمد", email: "ahmed@test.com", password: "12345678", role: "customer", verified: true, createdAt: new Date().toISOString(), phone: "51234568" }
         ];
         setItem('users', users);
+        console.log('✅ تم إنشاء المستخدمين');
     }
     
     let products = getItem('products', []);
     if (products.length === 0) {
         products = [
-            { id: 1, name: "كيك الفراولة الفاخر", category: "cakes", price: 12.500, image: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&h=400&fit=crop", description: "كيك فراولة طازجة", badge: "الأكثر مبيعاً", featured: true, stock: 20, active: true },
-            { id: 2, name: "باقة ورد حمراء", category: "flowers", price: 8.750, image: "https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?w=400&h=400&fit=crop", description: "24 وردة حمراء", badge: "جديد", featured: true, stock: 30, active: true },
-            { id: 3, name: "صندوق هدايا فاخر", category: "gifts", price: 15.000, image: "https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=400&h=400&fit=crop", description: "هدية فاخرة", badge: "هدية مثالية", featured: true, stock: 15, active: true }
+            { id: 1, name: "كيك الفراولة الفاخر", category: "cakes", price: 12.500, image: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&h=400&fit=crop", description: "كيك فراولة طازجة بكريمة الشانتيه الفرنسية", badge: "الأكثر مبيعاً", featured: true, stock: 20, active: true },
+            { id: 2, name: "باقة ورد حمراء", category: "flowers", price: 8.750, image: "https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?w=400&h=400&fit=crop", description: "24 وردة حمراء طازجة مع شريط ساتان", badge: "جديد", featured: true, stock: 30, active: true },
+            { id: 3, name: "صندوق هدايا فاخر", category: "gifts", price: 15.000, image: "https://images.unsplash.com/photo-1513885535751-8b9238bd345a?w=400&h=400&fit=crop", description: "صندوق هدايا فاخر مع شوكولاتة بلجيكية", badge: "هدية مثالية", featured: true, stock: 15, active: true }
         ];
         setItem('products', products);
+        console.log('✅ تم إنشاء المنتجات');
     }
     
     let paymentMethods = getItem('payment_methods', []);
     if (paymentMethods.length === 0) {
         paymentMethods = [
-            { id: 1, name: "بطاقة ائتمانية", description: "Visa, Mastercard", icon: "card", active: true },
-            { id: 2, name: "تحويل بنكي", description: "تحويل بنكي", icon: "bank", active: true },
-            { id: 3, name: "نقداً", description: "الدفع عند الاستلام", icon: "cash", active: true }
+            { id: 1, name: "بطاقة ائتمانية / مدين", description: "Visa, Mastercard, KNET", icon: "card", active: true },
+            { id: 2, name: "تحويل بنكي", description: "تحويل بنكي مباشر", icon: "bank", active: true },
+            { id: 3, name: "نقداً عند الاستلام", description: "الدفع نقداً للمندوب", icon: "cash", active: true }
         ];
         setItem('payment_methods', paymentMethods);
+        console.log('✅ تم إنشاء طرق الدفع');
     }
     
     let promos = getItem('promos', []);
     if (promos.length === 0) {
-        promos = [{ id: 1, title: "خصم 20%", description: "عرض خاص", image: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=600&h=300&fit=crop", badge: "عرض", active: true }];
+        promos = [
+            { id: 1, title: "خصم 20% على جميع الكيك", description: "عرض خاص لفترة محدودة", image: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=600&h=300&fit=crop", badge: "عرض", active: true }
+        ];
         setItem('promos', promos);
+        console.log('✅ تم إنشاء العروض');
     }
     
     let orders = getItem('orders', []);
-    if (orders.length === 0) setItem('orders', []);
+    if (orders.length === 0) {
+        setItem('orders', []);
+        console.log('✅ تم إنشاء قائمة الطلبات');
+    }
+    
+    console.log('✅ تم تهيئة البيانات بنجاح');
 }
 
 // =========================================
@@ -118,22 +135,61 @@ async function requestNotificationPermission() {
     try {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
+            console.log('✅ إذن الإشعارات مقبول');
             const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+            console.log('✅ FCM Token:', token);
+            
+            const user = getCurrentUser();
+            if (user) {
+                saveUserToken(user.id, token);
+            }
             return token;
         }
     } catch (error) {
-        console.error('خطأ في الإشعارات:', error);
+        console.error('❌ خطأ في الإشعارات:', error);
     }
     return null;
 }
 
+async function saveUserToken(userId, token) {
+    try {
+        const tokens = getItem('notification_tokens', []);
+        const existingIndex = tokens.findIndex(t => t.userId === userId);
+        
+        if (existingIndex !== -1) {
+            tokens[existingIndex].token = token;
+            tokens[existingIndex].updatedAt = new Date().toISOString();
+        } else {
+            tokens.push({ userId, token, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+        }
+        
+        setItem('notification_tokens', tokens);
+        
+        await addDoc(collection(db, "notification_tokens"), {
+            userId, token, createdAt: serverTimestamp(), userAgent: navigator.userAgent
+        });
+        
+        return true;
+    } catch (error) {
+        console.error('خطأ في حفظ التوكن:', error);
+        return false;
+    }
+}
+
 function setupMessageListener() {
     onMessage(messaging, (payload) => {
+        console.log('📨 إشعار جديد:', payload);
+        
         if (Notification.permission === 'granted') {
             new Notification(payload.notification.title, {
                 body: payload.notification.body,
-                icon: payload.notification.icon
+                icon: payload.notification.icon || '/logo.png',
+                data: payload.data
             });
+        }
+        
+        if (window.location.pathname.includes('my-orders') || window.location.pathname.includes('admin')) {
+            setTimeout(() => location.reload(), 2000);
         }
     });
 }
@@ -143,13 +199,17 @@ function setupMessageListener() {
 // =========================================
 function getCurrentUser() {
     try {
-        return JSON.parse(sessionStorage.getItem('giftstar_user'));
-    } catch {
+        const userStr = sessionStorage.getItem('giftstar_user');
+        return userStr ? JSON.parse(userStr) : null;
+    } catch (e) {
+        console.error('خطأ في جلب المستخدم:', e);
         return null;
     }
 }
 
 async function login(email, password) {
+    console.log('محاولة تسجيل الدخول:', email);
+    
     try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const firebaseUser = userCredential.user;
@@ -158,31 +218,40 @@ async function login(email, password) {
             id: firebaseUser.uid,
             name: firebaseUser.displayName || email.split('@')[0],
             email: firebaseUser.email,
-            role: email === 'admin@giftstar.kw' ? 'admin' : 'customer'
+            role: email === 'admin@giftstar.kw' ? 'admin' : 'customer',
+            phone: firebaseUser.phoneNumber || ''
         };
         
         sessionStorage.setItem('giftstar_user', JSON.stringify(sessionUser));
+        migrateCart();
         requestNotificationPermission();
         
         return { success: true, user: sessionUser };
         
     } catch (error) {
+        console.error('خطأ في تسجيل الدخول:', error);
+        
         const users = getItem('users', []);
         const user = users.find(u => u.email === email && u.password === password);
         
         if (user) {
-            const sessionUser = { id: user.id, name: user.name, email: user.email, role: user.role };
+            const sessionUser = { id: user.id, name: user.name, email: user.email, role: user.role, phone: user.phone };
             sessionStorage.setItem('giftstar_user', JSON.stringify(sessionUser));
+            migrateCart();
             requestNotificationPermission();
             return { success: true, user: sessionUser };
         }
         
-        return { success: false, error: 'بيانات الدخول غير صحيحة' };
+        return { success: false, error: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' };
     }
 }
 
 async function logout() {
-    try { await signOut(auth); } catch {}
+    try {
+        await signOut(auth);
+    } catch (e) {
+        console.error('خطأ في تسجيل الخروج:', e);
+    }
     sessionStorage.removeItem('giftstar_user');
     window.location.href = 'index.html';
 }
@@ -198,7 +267,8 @@ function getCart() {
             return cart ? JSON.parse(cart) : [];
         }
         return JSON.parse(localStorage.getItem('giftstar_cart') || '[]');
-    } catch {
+    } catch (e) {
+        console.error('خطأ في جلب السلة:', e);
         return [];
     }
 }
@@ -211,10 +281,13 @@ function saveCart(cart) {
         } else {
             localStorage.setItem('giftstar_cart', JSON.stringify(cart));
         }
+        
         updateCartBadge();
-        window.dispatchEvent(new CustomEvent('cartUpdated'));
+        window.dispatchEvent(new CustomEvent('cartUpdated', { detail: cart }));
+        
         return true;
-    } catch {
+    } catch (e) {
+        console.error('خطأ في حفظ السلة:', e);
         return false;
     }
 }
@@ -229,13 +302,17 @@ function addToCart(productId, qty = 1) {
     
     const products = getItem('products', []);
     const product = products.find(p => p.id === productId);
-    if (!product) return false;
+    
+    if (!product) {
+        console.error('المنتج غير موجود');
+        return false;
+    }
     
     let cart = getCart();
     const existing = cart.find(item => item.id === productId);
     
     if (existing) {
-        existing.qty += qty;
+        existing.qty = (existing.qty || 1) + qty;
     } else {
         cart.push({ id: productId, qty, name: product.name, price: product.price, image: product.image });
     }
@@ -245,7 +322,7 @@ function addToCart(productId, qty = 1) {
 }
 
 function removeFromCart(productId) {
-    const cart = getCart().filter(item => item.id !== productId);
+    let cart = getCart().filter(item => item.id !== productId);
     saveCart(cart);
     return cart;
 }
@@ -258,25 +335,53 @@ function clearCart() {
         localStorage.removeItem('giftstar_cart');
     }
     updateCartBadge();
-    window.dispatchEvent(new CustomEvent('cartUpdated'));
+    window.dispatchEvent(new CustomEvent('cartUpdated', { detail: [] }));
 }
 
 function getCartTotal() {
-    return getCart().reduce((sum, item) => sum + (item.price * item.qty), 0);
+    return getCart().reduce((sum, item) => sum + ((item.price || 0) * (item.qty || 0)), 0);
 }
 
 function getCartCount() {
-    return getCart().reduce((sum, item) => sum + item.qty, 0);
+    return getCart().reduce((sum, item) => sum + (item.qty || 0), 0);
 }
 
 function updateCartBadge() {
-    const total = getCartCount();
-    document.querySelectorAll('.cart-count, #cartCount').forEach(el => {
-        if (el) {
-            el.textContent = total;
-            el.style.display = total > 0 ? 'flex' : 'none';
-        }
-    });
+    try {
+        const cart = getCart();
+        const total = cart.reduce((sum, item) => sum + (item.qty || 0), 0);
+        
+        document.querySelectorAll('.cart-count, #cartCount').forEach(el => {
+            if (el) {
+                el.textContent = total;
+                el.style.display = total > 0 ? 'flex' : 'none';
+            }
+        });
+    } catch (e) {
+        console.error('خطأ في تحديث عداد السلة:', e);
+    }
+}
+
+function migrateCart() {
+    const user = getCurrentUser();
+    if (!user) return;
+    
+    const guestCart = JSON.parse(localStorage.getItem('giftstar_cart') || '[]');
+    if (guestCart.length > 0) {
+        let userCart = getCart();
+        
+        guestCart.forEach(guestItem => {
+            const existing = userCart.find(item => item.id === guestItem.id);
+            if (existing) {
+                existing.qty += guestItem.qty;
+            } else {
+                userCart.push(guestItem);
+            }
+        });
+        
+        saveCart(userCart);
+        localStorage.removeItem('giftstar_cart');
+    }
 }
 
 // =========================================
@@ -285,7 +390,9 @@ function updateCartBadge() {
 async function createOrder(orderData) {
     try {
         const user = getCurrentUser();
-        if (!user) return { success: false, error: 'يجب تسجيل الدخول' };
+        if (!user) {
+            return { success: false, error: 'يجب تسجيل الدخول أولاً' };
+        }
         
         const order = {
             id: 'GS' + Date.now() + '-' + Math.floor(Math.random() * 10000),
@@ -295,11 +402,15 @@ async function createOrder(orderData) {
             date: new Date().toLocaleDateString('ar-KW'),
             time: new Date().toLocaleTimeString('ar-KW'),
             status: 'new',
-            statusHistory: [{ status: 'new', date: new Date().toISOString(), note: 'تم استلام الطلب' }],
-            createdAt: serverTimestamp()
+            statusHistory: [
+                { status: 'new', date: new Date().toISOString(), note: 'تم استلام الطلب بنجاح' }
+            ],
+            createdAt: serverTimestamp(),
+            lastUpdate: new Date().toISOString()
         };
         
-        await addDoc(collection(db, "orders"), order);
+        const docRef = await addDoc(collection(db, "orders"), order);
+        console.log('✅ تم حفظ الطلب في Firebase:', docRef.id);
         
         const localOrders = getItem('orders', []);
         localOrders.unshift(order);
@@ -310,10 +421,40 @@ async function createOrder(orderData) {
         
         clearCart();
         
+        window.dispatchEvent(new CustomEvent('orderCreated', { detail: order }));
+        
         return { success: true, order };
         
     } catch (error) {
-        return { success: false, error: error.message };
+        console.error('❌ خطأ في حفظ الطلب:', error);
+        
+        const user = getCurrentUser();
+        const localOrders = getItem('orders', []);
+        
+        const order = {
+            id: 'GS' + Date.now() + '-' + Math.floor(Math.random() * 10000),
+            ...orderData,
+            userId: user.id,
+            userEmail: user.email,
+            date: new Date().toLocaleDateString('ar-KW'),
+            time: new Date().toLocaleTimeString('ar-KW'),
+            status: 'new',
+            statusHistory: [
+                { status: 'new', date: new Date().toISOString(), note: 'تم استلام الطلب' }
+            ],
+            createdAt: new Date().toISOString(),
+            lastUpdate: new Date().toISOString()
+        };
+        
+        localOrders.unshift(order);
+        setItem('orders', localOrders);
+        
+        localStorage.setItem('giftstar_last_order', JSON.stringify(order));
+        sessionStorage.setItem('giftstar_last_order', JSON.stringify(order));
+        
+        clearCart();
+        
+        return { success: true, order, fallback: true };
     }
 }
 
@@ -323,9 +464,18 @@ async function getUserOrders() {
     
     try {
         const q = query(collection(db, "orders"), where("userId", "==", user.id), orderBy("createdAt", "desc"));
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => doc.data());
-    } catch {
+        const querySnapshot = await getDocs(q);
+        const orders = [];
+        querySnapshot.forEach((doc) => {
+            orders.push(doc.data());
+        });
+        
+        console.log(`✅ تم جلب ${orders.length} طلب من Firebase`);
+        return orders;
+        
+    } catch (error) {
+        console.error('❌ خطأ في جلب الطلبات:', error);
+        
         const orders = getItem('orders', []);
         return orders.filter(o => o.userId === user.id || o.userEmail === user.email);
     }
@@ -334,9 +484,16 @@ async function getUserOrders() {
 async function getAllOrders() {
     try {
         const q = query(collection(db, "orders"), orderBy("createdAt", "desc"));
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => doc.data());
-    } catch {
+        const querySnapshot = await getDocs(q);
+        const orders = [];
+        querySnapshot.forEach((doc) => {
+            orders.push(doc.data());
+        });
+        
+        return orders;
+        
+    } catch (error) {
+        console.error('خطأ في جلب الطلبات:', error);
         return getItem('orders', []);
     }
 }
@@ -344,14 +501,70 @@ async function getAllOrders() {
 async function getOrderById(orderId) {
     try {
         const q = query(collection(db, "orders"), where("id", "==", orderId));
-        const snapshot = await getDocs(q);
-        if (!snapshot.empty) return snapshot.docs[0].data();
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+            return querySnapshot.docs[0].data();
+        }
         
         const orders = getItem('orders', []);
         return orders.find(o => o.id === orderId);
-    } catch {
+        
+    } catch (error) {
+        console.error('خطأ في جلب الطلب:', error);
         const orders = getItem('orders', []);
         return orders.find(o => o.id === orderId);
+    }
+}
+
+async function updateOrderStatus(orderId, newStatus, note = '') {
+    try {
+        const q = query(collection(db, "orders"), where("id", "==", orderId));
+        const querySnapshot = await getDocs(q);
+        
+        let order = null;
+        
+        if (!querySnapshot.empty) {
+            const docRef = querySnapshot.docs[0].ref;
+            await updateDoc(docRef, {
+                status: newStatus,
+                lastUpdate: new Date().toISOString(),
+                statusHistory: arrayUnion({
+                    status: newStatus,
+                    date: new Date().toISOString(),
+                    note: note || `تم تحديث الحالة إلى ${newStatus}`
+                })
+            });
+            
+            order = querySnapshot.docs[0].data();
+        }
+        
+        let orders = getItem('orders', []);
+        const index = orders.findIndex(o => o.id === orderId);
+        
+        if (index !== -1) {
+            orders[index].status = newStatus;
+            orders[index].lastUpdate = new Date().toISOString();
+            
+            if (!orders[index].statusHistory) {
+                orders[index].statusHistory = [];
+            }
+            
+            orders[index].statusHistory.push({
+                status: newStatus,
+                date: new Date().toISOString(),
+                note: note || `تم تحديث الحالة إلى ${newStatus}`
+            });
+            
+            setItem('orders', orders);
+            order = orders[index];
+        }
+        
+        return true;
+        
+    } catch (error) {
+        console.error('خطأ في تحديث الطلب:', error);
+        return false;
     }
 }
 
@@ -360,12 +573,21 @@ async function getOrderById(orderId) {
 // =========================================
 function getProducts(filters = {}) {
     let products = getItem('products', []);
+    
     if (filters.category && filters.category !== 'all') {
         products = products.filter(p => p.category === filters.category);
     }
-    if (filters.featured) products = products.filter(p => p.featured);
-    if (filters.active !== undefined) products = products.filter(p => p.active === filters.active);
-    else products = products.filter(p => p.active !== false);
+    
+    if (filters.featured) {
+        products = products.filter(p => p.featured);
+    }
+    
+    if (filters.active !== undefined) {
+        products = products.filter(p => p.active === filters.active);
+    } else {
+        products = products.filter(p => p.active !== false);
+    }
+    
     return products;
 }
 
@@ -386,6 +608,31 @@ function getPaymentMethods() {
 }
 
 // =========================================
+// الإحصائيات
+// =========================================
+async function getDashboardStats() {
+    const orders = await getAllOrders();
+    const products = getItem('products', []);
+    const users = getItem('users', []);
+    
+    const today = new Date().toLocaleDateString('ar-KW');
+    const todayOrders = orders.filter(o => o.date === today);
+    
+    const totalRevenue = orders.reduce((sum, o) => sum + (o.total || 0), 0);
+    const todayRevenue = todayOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+    
+    return {
+        totalOrders: orders.length,
+        todayOrders: todayOrders.length,
+        totalProducts: products.filter(p => p.active).length,
+        totalUsers: users.filter(u => u.role === 'customer').length,
+        totalRevenue,
+        todayRevenue,
+        averageOrderValue: orders.length ? (totalRevenue / orders.length).toFixed(3) : 0
+    };
+}
+
+// =========================================
 // دوال مساعدة
 // =========================================
 function formatKWD(amount) {
@@ -396,52 +643,93 @@ function formatKWD(amount) {
     }
 }
 
-function showNotification(msg, type = 'success') {
+function showNotification(msg, type = 'success', duration = 3000) {
+    const oldNotifications = document.querySelectorAll('.notification');
+    oldNotifications.forEach(n => n.remove());
+    
     const el = document.createElement('div');
     el.className = 'notification ' + type;
     el.textContent = msg;
     el.style.cssText = `
-        position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
         background: ${type === 'success' ? '#5ec98a' : '#e05555'};
-        color: white; padding: 12px 30px; border-radius: 50px;
-        font-size: 14px; font-weight: 600; z-index: 10000;
+        color: white;
+        padding: 12px 30px;
+        border-radius: 50px;
+        font-size: 14px;
+        font-weight: 600;
+        z-index: 10000;
         box-shadow: 0 5px 20px rgba(0,0,0,0.2);
         animation: slideDown 0.3s ease;
     `;
     document.body.appendChild(el);
-    setTimeout(() => el.remove(), 3000);
+    
+    setTimeout(() => {
+        el.style.animation = 'slideUp 0.3s ease';
+        setTimeout(() => el.remove(), 300);
+    }, duration);
 }
 
+// =========================================
+// التهيئة والمزامنة
+// =========================================
 function updateHeader() {
     const user = getCurrentUser();
     const loginBtn = document.getElementById('loginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
     
-    if (loginBtn) {
-        if (user) {
-            loginBtn.style.display = 'none';
-            if (logoutBtn) logoutBtn.style.display = 'inline-block';
-        } else {
-            loginBtn.style.display = 'inline-block';
-            if (logoutBtn) logoutBtn.style.display = 'none';
-        }
+    if (!loginBtn) return;
+    
+    if (user) {
+        loginBtn.style.display = 'none';
+        if (logoutBtn) logoutBtn.style.display = 'inline-block';
+    } else {
+        loginBtn.style.display = 'inline-block';
+        if (logoutBtn) logoutBtn.style.display = 'none';
     }
+    
     updateCartBadge();
 }
 
 function initializeApp() {
+    console.log('بدء تشغيل نظام Gift Star مع Firebase...');
+    
     initData();
     updateHeader();
+    
     setupMessageListener();
     
-    if (getCurrentUser()) requestNotificationPermission();
+    const user = getCurrentUser();
+    if (user) {
+        requestNotificationPermission();
+    }
     
-    window.addEventListener('storage', (e) => {
-        if (e.key?.startsWith('giftstar_cart')) updateCartBadge();
+    window.addEventListener('storage', function(e) {
+        if (e.key === 'giftstar_orders' || e.key === 'giftstar_last_order') {
+            console.log('تم تحديث الطلبات من صفحة أخرى');
+            if (window.location.pathname.includes('my-orders') || window.location.pathname.includes('admin')) {
+                location.reload();
+            }
+        }
+        
+        if (e.key && e.key.startsWith('giftstar_cart')) {
+            console.log('تم تحديث السلة من صفحة أخرى');
+            updateCartBadge();
+        }
     });
     
-    window.addEventListener('cartUpdated', updateCartBadge);
-    setInterval(updateCartBadge, 2000);
+    window.addEventListener('cartUpdated', function(e) {
+        updateCartBadge();
+    });
+    
+    setInterval(() => {
+        updateCartBadge();
+    }, 2000);
+    
+    console.log('نظام Gift Star مع Firebase جاهز للعمل');
 }
 
 // =========================================
@@ -466,9 +754,10 @@ document.head.appendChild(style);
 window.giftstar = {
     getCurrentUser, login, logout, getCart, addToCart, removeFromCart,
     getCartTotal, getCartCount, clearCart, updateCartBadge,
-    createOrder, getUserOrders, getAllOrders, getOrderById,
+    createOrder, getUserOrders, getAllOrders, getOrderById, updateOrderStatus,
     getProducts, getProductById, getPromos, getPaymentMethods,
-    formatKWD, showNotification, updateHeader
+    getDashboardStats, formatKWD, showNotification, updateHeader,
+    requestNotificationPermission
 };
 
 window.getCurrentUser = getCurrentUser;
@@ -481,13 +770,16 @@ window.createOrder = createOrder;
 window.getUserOrders = getUserOrders;
 window.getAllOrders = getAllOrders;
 window.getOrderById = getOrderById;
+window.updateOrderStatus = updateOrderStatus;
 window.getProducts = getProducts;
 window.getProductById = getProductById;
 window.getPromos = getPromos;
 window.getPaymentMethods = getPaymentMethods;
+window.getDashboardStats = getDashboardStats;
 window.formatKWD = formatKWD;
 window.showNotification = showNotification;
 window.updateHeader = updateHeader;
+window.requestNotificationPermission = requestNotificationPermission;
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeApp);
