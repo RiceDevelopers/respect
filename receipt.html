@@ -349,469 +349,282 @@
 
 <div class="stars-bg"></div>
 
-<script>
-// =========================================
-// دوال مساعدة أساسية
-// =========================================
-
-// دالة جلب المستخدم الحالي
-function getCurrentUser() {
-  try {
-    const userStr = sessionStorage.getItem('giftstar_user');
-    return userStr ? JSON.parse(userStr) : null;
-  } catch (e) {
-    console.error('خطأ في جلب المستخدم:', e);
-    return null;
+<!-- Firebase SDK -->
+<script type="importmap">
+  {
+    "imports": {
+      "firebase/app": "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js",
+      "firebase/firestore": "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js"
+    }
   }
-}
+</script>
 
-// دالة تحديث عداد السلة
-function updateCartBadge() {
-  try {
-    const user = getCurrentUser();
-    let cart = [];
+<script type="module" src="js/data.js"></script>
+<script type="module">
+import { getCurrentUser, getOrderById, formatKWD, logout as firebaseLogout, updateHeader } from './js/data.js';
+
+// تهيئة الصفحة
+window.addEventListener('DOMContentLoaded', async () => {
+    // تحديث الهيدر
+    updateHeader();
     
-    if (user) {
-      const cartStr = localStorage.getItem('giftstar_cart_' + user.id);
-      cart = cartStr ? JSON.parse(cartStr) : [];
+    // تحميل الطلب
+    await loadOrder();
+});
+
+// تحميل الطلب
+async function loadOrder() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderId = urlParams.get('order');
+    
+    let order = null;
+    
+    if (orderId) {
+        order = await getOrderById(orderId);
+    }
+    
+    if (!order) {
+        try {
+            const lastOrder = sessionStorage.getItem('giftstar_last_order');
+            order = lastOrder ? JSON.parse(lastOrder) : null;
+        } catch (e) {
+            console.error('خطأ في قراءة آخر طلب:', e);
+        }
+    }
+    
+    if (!order) {
+        try {
+            const lastOrder = localStorage.getItem('giftstar_last_order');
+            order = lastOrder ? JSON.parse(lastOrder) : null;
+        } catch (e) {
+            console.error('خطأ في قراءة آخر طلب:', e);
+        }
+    }
+    
+    if (order) {
+        displayOrder(order);
     } else {
-      const cartStr = localStorage.getItem('giftstar_cart');
-      cart = cartStr ? JSON.parse(cartStr) : [];
+        showError('لم يتم العثور على الطلب');
     }
-    
-    const total = cart.reduce((sum, item) => sum + (item.qty || 0), 0);
-    document.querySelectorAll('.cart-count, #cartCount').forEach(el => {
-      if (el) {
-        el.textContent = total;
-        el.style.display = total > 0 ? 'flex' : 'none';
-      }
-    });
-  } catch (e) {
-    console.error('خطأ في تحديث عداد السلة:', e);
-  }
 }
 
-// دالة تحديث الهيدر
-function updateHeader() {
-  const user = getCurrentUser();
-  const loginBtn = document.getElementById('loginBtn');
-  const logoutBtn = document.getElementById('logoutBtn');
-  
-  if (!loginBtn) return;
-  
-  if (user) {
-    loginBtn.style.display = 'none';
-    if (logoutBtn) logoutBtn.style.display = 'inline-block';
-  } else {
-    loginBtn.style.display = 'inline-block';
-    if (logoutBtn) logoutBtn.style.display = 'none';
-  }
-  
-  updateCartBadge();
-}
-
-// دالة تسجيل الخروج
-function logout() {
-  sessionStorage.removeItem('giftstar_user');
-  window.location.href = 'index.html';
-}
-
-// دالة تنسيق العملة
-function formatKWD(amount) {
-  try {
-    return Number(amount || 0).toFixed(3) + ' د.ك';
-  } catch {
-    return '0.000 د.ك';
-  }
-}
-
-// دالة عرض الإشعارات
-function showNotification(msg, type = 'success') {
-  const el = document.createElement('div');
-  el.className = 'notification ' + type;
-  el.textContent = msg;
-  el.style.cssText = `
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: ${type === 'success' ? '#5ec98a' : '#e05555'};
-    color: white;
-    padding: 12px 30px;
-    border-radius: 50px;
-    font-size: 14px;
-    font-weight: 600;
-    z-index: 10000;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-    animation: slideDown 0.3s ease;
-  `;
-  
-  document.body.appendChild(el);
-  
-  setTimeout(() => {
-    el.style.animation = 'slideUp 0.3s ease';
-    setTimeout(() => el.remove(), 300);
-  }, 3000);
-}
-
-// =========================================
-// دوال الإيصال
-// =========================================
-
-// دالة البحث عن الطلب من جميع المصادر
-function findOrder(orderId) {
-  console.log('البحث عن الطلب:', orderId);
-  
-  // 1. البحث في localStorage (giftstar_orders)
-  try {
-    const ordersStr = localStorage.getItem('giftstar_orders');
-    if (ordersStr) {
-      const orders = JSON.parse(ordersStr);
-      const order = orders.find(o => o.id === orderId);
-      if (order) {
-        console.log('تم العثور على الطلب في giftstar_orders');
-        return order;
-      }
-    }
-  } catch (e) {
-    console.error('خطأ في قراءة giftstar_orders:', e);
-  }
-  
-  // 2. البحث في آخر طلب
-  try {
-    const lastOrderStr = localStorage.getItem('giftstar_last_order');
-    if (lastOrderStr) {
-      const lastOrder = JSON.parse(lastOrderStr);
-      if (lastOrder.id === orderId || !orderId) {
-        console.log('تم العثور على آخر طلب');
-        return lastOrder;
-      }
-    }
-  } catch (e) {
-    console.error('خطأ في قراءة آخر طلب:', e);
-  }
-  
-  // 3. البحث في sessionStorage
-  try {
-    const sessionOrderStr = sessionStorage.getItem('giftstar_last_order');
-    if (sessionOrderStr) {
-      const sessionOrder = JSON.parse(sessionOrderStr);
-      if (sessionOrder.id === orderId || !orderId) {
-        console.log('تم العثور على الطلب في sessionStorage');
-        return sessionOrder;
-      }
-    }
-  } catch (e) {
-    console.error('خطأ في قراءة sessionStorage:', e);
-  }
-  
-  // 4. إنشاء طلب تجريبي للاختبار
-  if (!orderId) {
-    console.log('لا يوجد orderId، سيتم إنشاء طلب تجريبي');
-    return createTestOrder();
-  }
-  
-  return null;
-}
-
-// دالة إنشاء طلب تجريبي للاختبار
-function createTestOrder() {
-  return {
-    id: 'GS' + Date.now() + '-TEST',
-    customer: {
-      name: 'أحمد محمد',
-      phone: '51234567',
-      area: 'حولي',
-      address: 'شارع سالم المبارك، مبنى 12، شقة 5',
-      notes: 'يرجى الاتصال قبل التوصيل'
-    },
-    items: [
-      {
-        id: 1,
-        name: 'كيك الفراولة الفاخر',
-        price: 12.500,
-        qty: 1,
-        image: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&h=400&fit=crop'
-      },
-      {
-        id: 2,
-        name: 'باقة ورد حمراء كلاسيكية',
-        price: 8.750,
-        qty: 2,
-        image: 'https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?w=400&h=400&fit=crop'
-      }
-    ],
-    subtotal: 30.000,
-    delivery: 1.500,
-    total: 31.500,
-    paymentMethod: 'نقداً عند الاستلام',
-    paymentIcon: 'cash',
-    userEmail: 'ahmed@test.com',
-    status: 'new',
-    date: new Date().toLocaleDateString('ar-KW'),
-    time: new Date().toLocaleTimeString('ar-KW'),
-    createdAt: new Date().toISOString()
-  };
-}
-
-// دالة عرض الطلب
+// عرض الطلب
 function displayOrder(order) {
-  try {
-    console.log('عرض الطلب:', order);
-    
-    // التأكد من وجود البيانات
     order.customer = order.customer || {};
     order.items = order.items || [];
     
-    // حساب الإجماليات
     const subtotal = order.items.reduce((sum, item) => sum + ((item.price || 0) * (item.qty || 1)), 0);
     const delivery = order.delivery !== undefined ? order.delivery : (subtotal > 15 ? 0 : 1.500);
     const total = order.total || (subtotal + delivery);
     
-    // ترجمة حالة الطلب
     const statusMap = {
-      'new': 'جديد',
-      'processing': 'قيد المعالجة',
-      'delivered': 'تم التوصيل',
-      'cancelled': 'ملغي'
+        'new': 'جديد',
+        'processing': 'قيد المعالجة',
+        'delivered': 'تم التوصيل',
+        'cancelled': 'ملغي'
     };
     
     const statusText = statusMap[order.status] || order.status || 'جديد';
     
-    // إنشاء HTML
     const html = `
-      <div class="receipt-header">
-        <div class="receipt-check">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-        </div>
-        <h2>${window.location.search.includes('order=') ? 'تفاصيل الطلب' : 'تم الطلب بنجاح!'}</h2>
-        <p>${window.location.search.includes('order=') ? 'عرض تفاصيل الطلب السابق' : 'شكراً لك، سيتم التواصل معك قريباً للتأكيد'}</p>
-      </div>
-
-      <div class="receipt-number">
-        رقم الطلب: ${order.id || 'غير محدد'}
-      </div>
-
-      <div class="receipt-details">
-        <div class="receipt-row">
-          <span>👤 الاسم</span>
-          <strong>${order.customer.name || 'غير محدد'}</strong>
-        </div>
-        <div class="receipt-row">
-          <span>📞 الهاتف</span>
-          <strong>+965 ${order.customer.phone || 'غير محدد'}</strong>
-        </div>
-        <div class="receipt-row">
-          <span>📍 المنطقة</span>
-          <strong>${order.customer.area || 'غير محدد'}</strong>
-        </div>
-        <div class="receipt-row">
-          <span>🏠 العنوان</span>
-          <strong>${order.customer.address || 'غير محدد'}</strong>
-        </div>
-        <div class="receipt-row">
-          <span>📅 التاريخ والوقت</span>
-          <strong>${order.date || ''} ${order.time || ''}</strong>
-        </div>
-        ${order.customer.notes ? `
-        <div class="receipt-row">
-          <span>📝 ملاحظات</span>
-          <strong>${order.customer.notes}</strong>
-        </div>
-        ` : ''}
-      </div>
-
-      <div class="receipt-items">
-        <div class="receipt-items-title">
-          <span>🛍️</span>
-          <span>المنتجات</span>
-        </div>
-        ${order.items.map(item => `
-          <div class="receipt-item">
-            <div class="receipt-item-name">
-              <span class="receipt-item-qty">${item.qty || 1}</span>
-              <span>${item.name || 'منتج'}</span>
+        <div class="receipt-header">
+            <div class="receipt-check">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <polyline points="20 6 9 17 4 12"/>
+                </svg>
             </div>
-            <span class="receipt-item-price">${formatKWD((item.price || 0) * (item.qty || 1))}</span>
-          </div>
-        `).join('')}
-      </div>
-
-      <div class="receipt-total">
-        <span class="receipt-total-label">الإجمالي النهائي</span>
-        <span class="receipt-total-amount">${formatKWD(total)}</span>
-      </div>
-
-      <div class="receipt-payment">
-        <div class="receipt-row">
-          <span>💳 طريقة الدفع</span>
-          <strong>${order.paymentMethod || 'غير محدد'}</strong>
+            <h2>${window.location.search.includes('order=') ? 'تفاصيل الطلب' : 'تم الطلب بنجاح!'}</h2>
+            <p>${window.location.search.includes('order=') ? 'عرض تفاصيل الطلب السابق' : 'شكراً لك، سيتم التواصل معك قريباً للتأكيد'}</p>
         </div>
-        <div class="receipt-row">
-          <span>🚚 رسوم التوصيل</span>
-          <strong>${delivery === 0 ? 'مجاني' : formatKWD(delivery)}</strong>
+
+        <div class="receipt-number">
+            رقم الطلب: ${order.id || 'غير محدد'}
         </div>
-      </div>
 
-      ${order.status ? `
-        <div class="receipt-status">
-          <span class="status-badge ${order.status || 'new'}">${statusText}</span>
+        <div class="receipt-details">
+            <div class="receipt-row">
+                <span>👤 الاسم</span>
+                <strong>${order.customer.name || 'غير محدد'}</strong>
+            </div>
+            <div class="receipt-row">
+                <span>📞 الهاتف</span>
+                <strong>+965 ${order.customer.phone || 'غير محدد'}</strong>
+            </div>
+            <div class="receipt-row">
+                <span>📍 المنطقة</span>
+                <strong>${order.customer.area || 'غير محدد'}</strong>
+            </div>
+            <div class="receipt-row">
+                <span>🏠 العنوان</span>
+                <strong>${order.customer.address || 'غير محدد'}</strong>
+            </div>
+            <div class="receipt-row">
+                <span>📅 التاريخ والوقت</span>
+                <strong>${order.date || ''} ${order.time || ''}</strong>
+            </div>
+            ${order.customer.notes ? `
+            <div class="receipt-row">
+                <span>📝 ملاحظات</span>
+                <strong>${order.customer.notes}</strong>
+            </div>
+            ` : ''}
         </div>
-      ` : ''}
 
-      <div class="company-signature">
-        <span class="gold">Gift Star</span> - متجر الهدايا الكويتي الأول<br>
-        <small>نشكرك على ثقتك، ونتطلع لخدمتك دائماً ✨</small>
-      </div>
+        <div class="receipt-items">
+            <div class="receipt-items-title">
+                <span>🛍️</span>
+                <span>المنتجات</span>
+            </div>
+            ${order.items.map(item => `
+                <div class="receipt-item">
+                    <div class="receipt-item-name">
+                        <span class="receipt-item-qty">${item.qty || 1}</span>
+                        <span>${item.name || 'منتج'}</span>
+                    </div>
+                    <span class="receipt-item-price">${formatKWD((item.price || 0) * (item.qty || 1))}</span>
+                </div>
+            `).join('')}
+        </div>
 
-      <div class="receipt-actions" id="receiptActions">
-        <button class="btn-primary" onclick="generatePDF()">
-          <span style="display:flex; align-items:center; justify-content:center; gap:10px">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            تحميل PDF
-          </span>
-        </button>
-        <a href="index.html" class="btn-outline">العودة للرئيسية</a>
-        <a href="my-orders.html" class="btn-outline">طلباتي</a>
-      </div>
+        <div class="receipt-total">
+            <span class="receipt-total-label">الإجمالي النهائي</span>
+            <span class="receipt-total-amount">${formatKWD(total)}</span>
+        </div>
+
+        <div class="receipt-payment">
+            <div class="receipt-row">
+                <span>💳 طريقة الدفع</span>
+                <strong>${order.paymentMethod || 'غير محدد'}</strong>
+            </div>
+            <div class="receipt-row">
+                <span>🚚 رسوم التوصيل</span>
+                <strong>${delivery === 0 ? 'مجاني' : formatKWD(delivery)}</strong>
+            </div>
+        </div>
+
+        ${order.status ? `
+            <div class="receipt-status">
+                <span class="status-badge ${order.status || 'new'}">${statusText}</span>
+            </div>
+        ` : ''}
+
+        <div class="company-signature">
+            <span class="gold">Gift Star</span> - متجر الهدايا الكويتي الأول<br>
+            <small>نشكرك على ثقتك، ونتطلع لخدمتك دائماً ✨</small>
+        </div>
+
+        <div class="receipt-actions" id="receiptActions">
+            <button class="btn-primary" onclick="window.generatePDF()">
+                <span style="display:flex; align-items:center; justify-content:center; gap:10px">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                    تحميل PDF
+                </span>
+            </button>
+            <a href="index.html" class="btn-outline">العودة للرئيسية</a>
+            <a href="my-orders.html" class="btn-outline">طلباتي</a>
+        </div>
     `;
     
     document.getElementById('receiptContent').innerHTML = html;
-    
-  } catch (error) {
-    console.error('خطأ في عرض الطلب:', error);
-    showError('حدث خطأ في عرض الطلب');
-  }
 }
 
-// دالة عرض الخطأ
+// عرض الخطأ
 function showError(message) {
-  const container = document.getElementById('receiptContent');
-  if (!container) return;
-  
-  container.innerHTML = `
-    <div class="error-container">
-      <svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="8" x2="12" y2="12"/>
-        <circle cx="12" cy="16" r="1" fill="var(--danger)"/>
-      </svg>
-      <h3>عذراً</h3>
-      <p>${message}</p>
-      <div style="display:flex; gap:15px; justify-content:center; margin-top:30px;">
-        <a href="index.html" class="btn-primary">العودة للرئيسية</a>
-        <a href="my-orders.html" class="btn-outline">طلباتي</a>
-      </div>
-    </div>
-  `;
+    document.getElementById('receiptContent').innerHTML = `
+        <div class="error-container">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <circle cx="12" cy="16" r="1" fill="var(--danger)"/>
+            </svg>
+            <h3>عذراً</h3>
+            <p>${message}</p>
+            <div style="display:flex; gap:15px; justify-content:center; margin-top:30px;">
+                <a href="index.html" class="btn-primary">العودة للرئيسية</a>
+                <a href="my-orders.html" class="btn-outline">طلباتي</a>
+            </div>
+        </div>
+    `;
 }
 
-// دالة توليد PDF
-async function generatePDF() {
-  try {
-    const { jsPDF } = window.jspdf;
-    const element = document.getElementById('receiptContent');
-    
-    // إخفاء الأزرار مؤقتاً
-    const actions = document.getElementById('receiptActions');
-    if (actions) actions.style.display = 'none';
-    
-    // التقاط صورة للعنصر
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      backgroundColor: '#0f1326',
-      logging: false,
-      allowTaint: true,
-      useCORS: true
-    });
-    
-    // إظهار الأزرار مرة أخرى
-    if (actions) actions.style.display = 'flex';
-    
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
-    
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-    const width = imgWidth * ratio;
-    const height = imgHeight * ratio;
-    
-    pdf.addImage(imgData, 'PNG', (pdfWidth - width) / 2, 0, width, height);
-    
-    // استخراج رقم الطلب
-    const orderIdElement = document.querySelector('.receipt-number');
-    const orderId = orderIdElement ? orderIdElement.textContent.replace('رقم الطلب: ', '').trim() : 'order';
-    
-    pdf.save(`GiftStar-${orderId}.pdf`);
-    
-    showNotification('تم تحميل ملف PDF بنجاح', 'success');
-    
-  } catch (error) {
-    console.error('خطأ في توليد PDF:', error);
-    showNotification('حدث خطأ أثناء إنشاء ملف PDF', 'error');
-    
-    // إظهار الأزرار في حالة الخطأ
-    const actions = document.getElementById('receiptActions');
-    if (actions) actions.style.display = 'flex';
-  }
+// توليد PDF
+window.generatePDF = async function() {
+    try {
+        const { jsPDF } = window.jspdf;
+        const element = document.getElementById('receiptContent');
+        
+        const actions = document.getElementById('receiptActions');
+        if (actions) actions.style.display = 'none';
+        
+        const canvas = await html2canvas(element, {
+            scale: 2,
+            backgroundColor: '#0f1326',
+            logging: false,
+            allowTaint: true,
+            useCORS: true
+        });
+        
+        if (actions) actions.style.display = 'flex';
+        
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+        
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const ratio = pdfWidth / imgWidth;
+        const height = imgHeight * ratio;
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, height);
+        
+        const orderIdElement = document.querySelector('.receipt-number');
+        const orderId = orderIdElement ? orderIdElement.textContent.replace('رقم الطلب: ', '').trim() : 'order';
+        
+        pdf.save(`GiftStar-${orderId}.pdf`);
+        
+        showNotification('تم تحميل ملف PDF بنجاح', 'success');
+    } catch (error) {
+        console.error('خطأ في توليد PDF:', error);
+        showNotification('حدث خطأ أثناء إنشاء ملف PDF', 'error');
+    }
 }
 
-// =========================================
-// دالة التهيئة الرئيسية
-// =========================================
-function init() {
-  console.log('بدء تحميل صفحة الإيصال...');
-  
-  // تحديث الهيدر
-  updateHeader();
-  
-  // الحصول على orderId من الرابط
-  const urlParams = new URLSearchParams(window.location.search);
-  const orderId = urlParams.get('order');
-  
-  console.log('orderId من الرابط:', orderId);
-  
-  // البحث عن الطلب
-  const order = findOrder(orderId);
-  
-  if (order) {
-    console.log('تم العثور على الطلب:', order);
-    displayOrder(order);
-  } else {
-    console.log('لم يتم العثور على الطلب');
-    showError('لم يتم العثور على الطلب');
-  }
+// إشعارات
+function showNotification(msg, type) {
+    const el = document.createElement('div');
+    el.className = 'notification ' + type;
+    el.textContent = msg;
+    el.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: ${type === 'success' ? '#5ec98a' : '#e05555'};
+        color: white;
+        padding: 12px 30px;
+        border-radius: 50px;
+        font-size: 14px;
+        font-weight: 600;
+        z-index: 10000;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        animation: slideDown 0.3s ease;
+    `;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3000);
 }
 
-// تشغيل التهيئة عند تحميل الصفحة
-document.addEventListener('DOMContentLoaded', init);
-
-// إضافة الأنيميشن للإشعارات
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes slideDown {
-    from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-    to { opacity: 1; transform: translateX(-50%) translateY(0); }
-  }
-  @keyframes slideUp {
-    from { opacity: 1; transform: translateX(-50%) translateY(0); }
-    to { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-  }
-`;
-document.head.appendChild(style);
+// تسجيل الخروج
+window.logout = () => {
+    firebaseLogout();
+}
 </script>
 </body>
 </html>
