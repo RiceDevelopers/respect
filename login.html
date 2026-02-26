@@ -7,15 +7,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <style>
-  .auth-page {
+.auth-page {
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 40px 20px;
     background: linear-gradient(135deg, var(--secondary) 0%, #0a0e1a 100%);
-  }
-  .auth-card {
+}
+.auth-card {
     background: linear-gradient(135deg, var(--secondary-light) 0%, #1a1f2f 100%);
     border-radius: 30px;
     padding: 50px;
@@ -23,32 +23,32 @@
     max-width: 480px;
     box-shadow: 0 30px 60px rgba(0,0,0,0.5);
     border: 1px solid var(--border);
-  }
-  .auth-card h2 {
+}
+.auth-card h2 {
     font-size: 36px;
     font-weight: 900;
     color: var(--text);
     margin-bottom: 10px;
     text-align: center;
     font-family: 'Playfair Display', serif;
-  }
-  .auth-sub {
+}
+.auth-sub {
     text-align: center;
     color: var(--text-muted);
     font-size: 16px;
     margin-bottom: 40px;
-  }
-  .form-group {
+}
+.form-group {
     margin-bottom: 25px;
-  }
-  .form-label {
+}
+.form-label {
     display: block;
     font-size: 14px;
     font-weight: 700;
     color: var(--text-muted);
     margin-bottom: 8px;
-  }
-  .form-input {
+}
+.form-input {
     width: 100%;
     padding: 16px 20px;
     border: 2px solid var(--border);
@@ -60,13 +60,13 @@
     transition: all 0.3s ease;
     direction: ltr;
     text-align: left;
-  }
-  .form-input:focus {
+}
+.form-input:focus {
     outline: none;
     border-color: var(--primary);
     box-shadow: 0 0 0 4px rgba(200,169,110,0.1);
-  }
-  .btn-submit {
+}
+.btn-submit {
     width: 100%;
     background: linear-gradient(135deg, var(--primary), var(--primary-light));
     color: var(--secondary);
@@ -78,48 +78,52 @@
     transition: all 0.3s ease;
     cursor: pointer;
     margin-top: 20px;
-  }
-  .btn-submit:hover { 
+}
+.btn-submit:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 30px rgba(200,169,110,0.4);
-  }
-  .btn-submit:disabled {
+}
+.btn-submit:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-  }
-  .auth-footer {
+}
+.auth-footer {
     text-align: center;
     margin-top: 25px;
     font-size: 15px;
     color: var(--text-muted);
-  }
-  .auth-footer a {
+}
+.auth-footer a {
     color: var(--primary);
     font-weight: 700;
-  }
-  .alert {
+    text-decoration: none;
+}
+.auth-footer a:hover {
+    text-decoration: underline;
+}
+.alert {
     padding: 16px 20px;
     border-radius: 15px;
     margin-bottom: 25px;
     font-size: 14px;
     font-weight: 600;
     text-align: center;
-  }
-  .alert-error {
+}
+.alert-error {
     background: rgba(224,85,85,0.15);
     color: #ff6b6b;
     border: 1px solid rgba(224,85,85,0.3);
-  }
-  .alert-success {
+}
+.alert-success {
     background: rgba(94,201,138,0.15);
     color: #5ec98a;
     border: 1px solid rgba(94,201,138,0.3);
-  }
-  .reset-btn {
+}
+.reset-btn {
     margin-top: 25px;
     text-align: center;
-  }
-  .reset-btn button {
+}
+.reset-btn button {
     background: none;
     border: 1px solid var(--primary);
     color: var(--primary);
@@ -128,24 +132,24 @@
     font-size: 13px;
     cursor: pointer;
     transition: all 0.3s ease;
-  }
-  .reset-btn button:hover {
+}
+.reset-btn button:hover {
     background: var(--primary);
     color: var(--secondary);
-  }
-  .demo-accounts {
+}
+.demo-accounts {
     margin-top: 30px;
     padding: 20px;
     background: rgba(0,0,0,0.2);
     border-radius: 15px;
     border: 1px solid var(--border);
-  }
-  .demo-accounts h4 {
+}
+.demo-accounts h4 {
     color: var(--primary);
     margin-bottom: 15px;
     text-align: center;
-  }
-  .demo-account {
+}
+.demo-account {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -155,82 +159,83 @@
     margin-bottom: 10px;
     cursor: pointer;
     transition: all 0.3s ease;
-  }
-  .demo-account:hover {
+}
+.demo-account:hover {
     background: rgba(200,169,110,0.1);
     transform: translateX(-5px);
-  }
-  .demo-account .email {
+}
+.demo-account .email {
     color: var(--text);
     font-family: monospace;
-  }
-  .demo-account .badge {
+}
+.demo-account .badge {
     background: var(--primary);
     color: var(--secondary);
     padding: 3px 8px;
     border-radius: 12px;
     font-size: 11px;
-  }
+}
 </style>
 </head>
 <body>
 <header class="site-header">
-  <div class="header-main">
-    <div class="container header-flex">
-      <a href="index.html" class="logo">
-        <div class="logo-star">★</div>
-        <div class="logo-text">
-          <span class="logo-gift">Gift</span>
-          <span class="logo-star-word">Star</span>
+    <div class="header-main">
+        <div class="container header-flex">
+            <a href="index.html" class="logo">
+                <div class="logo-star">★</div>
+                <div class="logo-text">
+                    <span class="logo-gift">Gift</span>
+                    <span class="logo-star-word">Star</span>
+                </div>
+            </a>
         </div>
-      </a>
     </div>
-  </div>
 </header>
 
 <div class="auth-page">
-  <div class="auth-card">
-    <h2>تسجيل الدخول</h2>
-    <p class="auth-sub">مرحباً بك في Gift Star</p>
+    <div class="auth-card">
+        <h2>تسجيل الدخول</h2>
+        <p class="auth-sub">مرحباً بك في Gift Star</p>
 
-    <div id="msgBanner" class="alert alert-error" style="display:none"></div>
-    <div id="successBanner" class="alert alert-success" style="display:none"></div>
+        <div id="msgBanner" class="alert alert-error" style="display:none"></div>
+        <div id="successBanner" class="alert alert-success" style="display:none"></div>
 
-    <div class="form-group">
-      <label class="form-label">البريد الإلكتروني</label>
-      <input type="email" id="email" class="form-input" value="admin@giftstar.kw">
+        <div class="form-group">
+            <label class="form-label">البريد الإلكتروني</label>
+            <input type="email" id="email" class="form-input" value="admin@giftstar.kw">
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">كلمة المرور</label>
+            <input type="password" id="password" class="form-input" value="Admin@2024">
+        </div>
+
+        <button class="btn-submit" onclick="doLogin()" id="loginBtn">تسجيل الدخول</button>
+
+        <div class="auth-footer">
+            ليس لديك حساب؟ <a href="register.html">إنشاء حساب جديد</a>
+        </div>
+
+        <div class="demo-accounts">
+            <h4>🌟 حسابات تجريبية</h4>
+            <div class="demo-account" onclick="fillCredentials('admin@giftstar.kw', 'Admin@2024')">
+                <span class="email">admin@giftstar.kw</span>
+                <span class="badge">مدير</span>
+            </div>
+            <div class="demo-account" onclick="fillCredentials('ahmed@test.com', '12345678')">
+                <span class="email">ahmed@test.com</span>
+                <span class="badge">عميل</span>
+            </div>
+        </div>
+
+        <div class="reset-btn">
+            <button onclick="resetSystem()">🔄 إعادة تعيين النظام</button>
+        </div>
     </div>
-    
-    <div class="form-group">
-      <label class="form-label">كلمة المرور</label>
-      <input type="password" id="password" class="form-input" value="Admin@2024">
-    </div>
-
-    <button class="btn-submit" onclick="doLogin()" id="loginBtn">تسجيل الدخول</button>
-
-    <div class="auth-footer">
-      ليس لديك حساب؟ <a href="register.html">إنشاء حساب جديد</a>
-    </div>
-
-    <div class="demo-accounts">
-      <h4>🌟 حسابات تجريبية</h4>
-      <div class="demo-account" onclick="fillCredentials('admin@giftstar.kw', 'Admin@2024')">
-        <span class="email">admin@giftstar.kw</span>
-        <span class="badge">مدير</span>
-      </div>
-      <div class="demo-account" onclick="fillCredentials('ahmed@test.com', '12345678')">
-        <span class="email">ahmed@test.com</span>
-        <span class="badge">عميل</span>
-      </div>
-    </div>
-
-    <div class="reset-btn">
-      <button onclick="resetSystem()">🔄 إعادة تعيين النظام</button>
-    </div>
-  </div>
 </div>
 
 <script src="js/data.js"></script>
+<script src="js/main.js"></script>
 <script>
 function fillCredentials(email, password) {
     document.getElementById('email').value = email;
@@ -248,28 +253,28 @@ function doLogin() {
     const password = document.getElementById('password').value;
     const banner = document.getElementById('msgBanner');
     const loginBtn = document.getElementById('loginBtn');
-    
+
     banner.style.display = 'none';
-    
+
     if (!email || !password) {
         banner.textContent = 'يرجى ملء جميع الحقول';
         banner.style.display = 'block';
         return;
     }
-    
+
     loginBtn.textContent = 'جاري تسجيل الدخول...';
     loginBtn.disabled = true;
-    
+
     setTimeout(async () => {
         const result = window.login ? await window.login(email, password) : null;
-        
+
         if (result && result.success) {
             document.getElementById('successBanner').style.display = 'block';
             document.getElementById('successBanner').textContent = '✅ تم تسجيل الدخول بنجاح!';
-            
+
             setTimeout(() => {
-                const redirect = sessionStorage.getItem('giftstar_redirect_after_login') || 
-                               (result.user.role === 'admin' ? 'admin/index.html' : 'index.html');
+                const redirect = sessionStorage.getItem('giftstar_redirect_after_login') ||
+                    (result.user.role === 'admin' ? 'admin/index.html' : 'index.html');
                 sessionStorage.removeItem('giftstar_redirect_after_login');
                 window.location.href = redirect;
             }, 1000);
@@ -293,56 +298,31 @@ document.addEventListener('keypress', (e) => {
 });
 </script>
 
-<!-- ========================================= -->
-<!-- كود Firebase - يضاف في نهاية كل صفحة -->
-<!-- ========================================= -->
+<!-- كود Firebase -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-import { 
-  getFirestore,
-  collection,
-  addDoc,
-  onSnapshot,
-  doc,
-  updateDoc,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCtHnYZT8yq9tp7xaA7AyJQV4Ag4Wi1Yks",
-  authDomain: "gift-star-abf48.firebaseapp.com",
-  projectId: "gift-star-abf48",
-  storageBucket: "gift-star-abf48.firebasestorage.app",
-  messagingSenderId: "546782076914",
-  appId: "1:546782076914:web:3fb957a03c7e0501fc556b"
+    apiKey: "AIzaSyCtHnYZT8yq9tp7xaA7AyJQV4Ag4Wi1Yks",
+    authDomain: "gift-star-abf48.firebaseapp.com",
+    projectId: "gift-star-abf48",
+    storageBucket: "gift-star-abf48.firebasestorage.app",
+    messagingSenderId: "546782076914",
+    appId: "1:546782076914:web:3fb957a03c7e0501fc556b"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 window.db = db;
-window.fb = {
-  collection,
-  addDoc,
-  onSnapshot,
-  doc,
-  updateDoc,
-  serverTimestamp
-};
-
-console.log('✅ Firebase loaded in login.html');
+console.log('✅ Firebase loaded');
 </script>
 
 <!-- Firebase Messaging -->
 <script>
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/firebase-messaging-sw.js')
-        .then((registration) => {
-            console.log('✅ Service Worker registered:', registration);
-        })
-        .catch((error) => {
-            console.error('❌ Service Worker registration failed:', error);
-        });
+    navigator.serviceWorker.register('/firebase-messaging-sw.js').catch(console.error);
 }
 </script>
 </body>
