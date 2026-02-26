@@ -203,9 +203,21 @@
   </div>
 </div>
 
-<script src="js/data.js"></script>
-<script>
-function doLogin() {
+<!-- Firebase SDK -->
+<script type="importmap">
+  {
+    "imports": {
+      "firebase/app": "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js",
+      "firebase/auth": "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js"
+    }
+  }
+</script>
+
+<script type="module" src="js/data.js"></script>
+<script type="module">
+import { login, getCurrentUser } from './js/data.js';
+
+window.doLogin = async function() {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     const banner = document.getElementById('msgBanner');
@@ -224,43 +236,51 @@ function doLogin() {
     loginBtn.textContent = 'جاري تسجيل الدخول...';
     loginBtn.disabled = true;
     
-    setTimeout(() => {
-        const result = window.login ? window.login(email, password) : null;
+    const result = await login(email, password);
+    
+    if (result.success) {
+        successBanner.textContent = '✅ تم تسجيل الدخول بنجاح! جاري التحويل...';
+        successBanner.style.display = 'block';
         
-        if (result && result.success) {
-            successBanner.textContent = '✅ تم تسجيل الدخول بنجاح! جاري التحويل...';
-            successBanner.style.display = 'block';
-            
-            setTimeout(() => {
-                const redirect = sessionStorage.getItem('giftstar_redirect_after_login') || 
-                               (result.user.role === 'admin' ? 'admin/index.html' : 'index.html');
-                sessionStorage.removeItem('giftstar_redirect_after_login');
-                window.location.href = redirect;
-            }, 1000);
-        } else {
-            banner.textContent = result ? result.error : 'فشل تسجيل الدخول';
-            banner.style.display = 'block';
-            loginBtn.textContent = 'دخول';
-            loginBtn.disabled = false;
-        }
-    }, 500);
-}
+        setTimeout(() => {
+            const redirect = sessionStorage.getItem('giftstar_redirect_after_login') || 
+                           (result.user.role === 'admin' ? 'admin/index.html' : 'index.html');
+            sessionStorage.removeItem('giftstar_redirect_after_login');
+            window.location.href = redirect;
+        }, 1000);
+    } else {
+        banner.textContent = result.error;
+        banner.style.display = 'block';
+        loginBtn.textContent = 'دخول';
+        loginBtn.disabled = false;
+    }
+};
 
-function resetSystem() {
+window.resetSystem = function() {
     localStorage.clear();
     sessionStorage.clear();
     location.reload();
-}
+};
 
+// عرض رسالة إذا تم التحويل من صفحة أخرى
 const params = new URLSearchParams(window.location.search);
 if (params.get('msg') === 'login_required') {
     document.getElementById('msgBanner').textContent = 'يرجى تسجيل الدخول أولاً';
     document.getElementById('msgBanner').style.display = 'block';
 }
 
+// إضافة مستمع لزر Enter
 document.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') doLogin();
+    if (e.key === 'Enter') {
+        doLogin();
+    }
 });
+
+// التحقق من تسجيل الدخول الحالي
+const currentUser = getCurrentUser();
+if (currentUser) {
+    window.location.href = 'index.html';
+}
 </script>
 </body>
 </html>
