@@ -46,7 +46,6 @@
   </div>
 </header>
 
-
 <!-- Promotions Banner -->
 <section class="promo-section" id="promoSection">
   <div class="container">
@@ -172,7 +171,7 @@
       <div class="footer-links-col">
         <h4>تواصل معنا</h4>
         <span>الكويت - جميع المحافظات</span>
-        <span><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="aec7c0c8c1eec9c7c8dadddacfdc80cdc1c380c5d9">[email&#160;protected]</a></span>
+        <span>support@giftstar.com.kw</span>
         <span>+965 XXXX XXXX</span>
       </div>
     </div>
@@ -184,90 +183,40 @@
 
 <div class="stars-bg"></div>
 
-<script src="js/data.js"></script>
-<script>
-// Slider variables
-let currentSlide = 0;
-let slideInterval;
+<!-- Firebase SDK -->
+<script type="importmap">
+  {
+    "imports": {
+      "firebase/app": "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js",
+      "firebase/firestore": "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js",
+      "firebase/auth": "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js",
+      "firebase/analytics": "https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js"
+    }
+  }
+</script>
+
+<script type="module" src="js/data.js"></script>
+<script type="module">
+import { getCurrentUser, getProducts, getPromos, addToCart, logout as firebaseLogout, updateHeader } from './js/data.js';
 
 // تهيئة الصفحة
-function init() {
+window.addEventListener('DOMContentLoaded', async () => {
   // تحديث الهيدر
-  if (typeof giftstar !== 'undefined' && giftstar.updateHeader) {
-    giftstar.updateHeader();
-  } else {
-    updateHeaderLocal();
-  }
-  
-  // تهيئة السلايدر
-  initSlider();
+  updateHeader();
   
   // عرض العروض
   renderPromos();
   
   // عرض المنتجات المميزة
   renderFeaturedProducts();
-}
-
-// السلايدر
-function initSlider() {
-  const slides = document.querySelectorAll('.slide');
-  const dotsContainer = document.getElementById('sliderDots');
-  
-  if (!slides.length || !dotsContainer) return;
-
-  // إنشاء النقاط
-  dotsContainer.innerHTML = '';
-  slides.forEach((_, i) => {
-    const dot = document.createElement('div');
-    dot.className = 'dot' + (i === 0 ? ' active' : '');
-    dot.onclick = () => goToSlide(i);
-    dotsContainer.appendChild(dot);
-  });
-
-  // تشغيل السلايدر التلقائي
-  if (slideInterval) clearInterval(slideInterval);
-  slideInterval = setInterval(() => changeSlide(1), 5000);
-}
-
-function changeSlide(dir) {
-  const slides = document.querySelectorAll('.slide');
-  if (!slides.length) return;
-  
-  slides[currentSlide].classList.remove('active');
-  currentSlide = (currentSlide + dir + slides.length) % slides.length;
-  slides[currentSlide].classList.add('active');
-  
-  document.querySelectorAll('.dot').forEach((d, i) => {
-    d.classList.toggle('active', i === currentSlide);
-  });
-}
-
-function goToSlide(n) {
-  const slides = document.querySelectorAll('.slide');
-  if (!slides.length) return;
-  
-  slides[currentSlide].classList.remove('active');
-  currentSlide = n;
-  slides[currentSlide].classList.add('active');
-  
-  document.querySelectorAll('.dot').forEach((d, i) => {
-    d.classList.toggle('active', i === currentSlide);
-  });
-}
+});
 
 // عرض العروض
-function renderPromos() {
+async function renderPromos() {
   const container = document.getElementById('promoGrid');
   if (!container) return;
 
-  let promos = [];
-  
-  if (typeof giftstar !== 'undefined' && giftstar.getData) {
-    promos = giftstar.getData('promos', []).filter(p => p.active);
-  } else {
-    promos = getDataLocal('promos', []).filter(p => p.active);
-  }
+  const promos = getPromos();
   
   if (!promos.length) {
     document.querySelector('.promo-section').style.display = 'none';
@@ -287,19 +236,11 @@ function renderPromos() {
 }
 
 // عرض المنتجات المميزة
-function renderFeaturedProducts() {
+async function renderFeaturedProducts() {
   const container = document.getElementById('featuredProducts');
   if (!container) return;
 
-  let products = [];
-  
-  if (typeof giftstar !== 'undefined' && giftstar.getProducts) {
-    products = giftstar.getProducts({ featured: true, active: true }).slice(0, 8);
-  } else {
-    products = getDataLocal('products', []).filter(p => p.featured && p.active).slice(0, 8);
-  }
-  
-  console.log('Featured products:', products.length);
+  const products = getProducts({ featured: true, active: true }).slice(0, 8);
   
   if (!products.length) {
     container.innerHTML = '<div class="loading" style="grid-column:1/-1">لا توجد منتجات</div>';
@@ -320,17 +261,21 @@ function productCardHTML(p) {
         <p class="product-desc">${p.description.substring(0, 60)}...</p>
         <div class="product-footer">
           <div class="product-price">${formatPrice(p.price)}</div>
-          <button class="btn-add-cart" onclick="event.stopPropagation();handleAddToCart(${p.id}, this)">أضف للسلة</button>
+          <button class="btn-add-cart" onclick="event.stopPropagation();window.handleAddToCart(${p.id}, this)">أضف للسلة</button>
         </div>
       </div>
     </div>
   `;
 }
 
+// تنسيق السعر
+function formatPrice(price) {
+  return price.toFixed(3) + ' د.ك';
+}
+
 // إضافة للسلة
-function handleAddToCart(productId, btn) {
-  const user = typeof giftstar !== 'undefined' && giftstar.getCurrentUser ? 
-               giftstar.getCurrentUser() : getCurrentUserLocal();
+window.handleAddToCart = async (productId, btn) => {
+  const user = getCurrentUser();
   
   if (!user) {
     sessionStorage.setItem('giftstar_redirect_after_login', window.location.href);
@@ -338,11 +283,7 @@ function handleAddToCart(productId, btn) {
     return;
   }
   
-  if (typeof giftstar !== 'undefined' && giftstar.addToCart) {
-    giftstar.addToCart(productId);
-  } else {
-    addToCartLocal(productId);
-  }
+  const result = addToCart(productId);
   
   btn.textContent = '✓ تمت الإضافة';
   btn.style.background = 'var(--success)';
@@ -352,105 +293,37 @@ function handleAddToCart(productId, btn) {
     btn.style.background = '';
   }, 1500);
   
-  if (typeof giftstar !== 'undefined' && giftstar.showNotification) {
-    giftstar.showNotification('تمت إضافة المنتج للسلة', 'success');
-  } else {
-    showNotificationLocal('تمت إضافة المنتج للسلة', 'success');
-  }
+  showNotification('تمت إضافة المنتج للسلة', 'success');
 }
 
-// تنسيق السعر
-function formatPrice(price) {
-  if (typeof giftstar !== 'undefined' && giftstar.formatKWD) {
-    return giftstar.formatKWD(price);
-  }
-  return price.toFixed(3) + ' د.ك';
-}
-
-// دوال مساعدة محلية (فشل safe)
-function getDataLocal(key, fallback) {
-  try {
-    const v = localStorage.getItem('giftstar_' + key);
-    return v ? JSON.parse(v) : fallback;
-  } catch { return fallback; }
-}
-
-function getCurrentUserLocal() {
-  try {
-    return JSON.parse(sessionStorage.getItem('giftstar_user'));
-  } catch { return null; }
-}
-
-function addToCartLocal(productId, qty = 1) {
-  const products = getDataLocal('products', []);
-  const product = products.find(p => p.id === productId);
-  if (!product) return false;
-
-  let cart = getDataLocal('cart', []);
-  const existing = cart.find(i => i.id === productId);
-  
-  if (existing) {
-    existing.qty += qty;
-  } else {
-    cart.push({ 
-      id: productId, 
-      qty, 
-      name: product.name, 
-      price: product.price, 
-      image: product.image 
-    });
-  }
-  
-  localStorage.setItem('giftstar_cart', JSON.stringify(cart));
-  updateCartBadgeLocal();
-  return true;
-}
-
-function updateCartBadgeLocal() {
-  try {
-    const cart = JSON.parse(localStorage.getItem('giftstar_cart') || '[]');
-    const total = cart.reduce((s, i) => s + i.qty, 0);
-    document.querySelectorAll('.cart-count, #cartCount').forEach(el => {
-      if (el) el.textContent = total;
-    });
-  } catch (e) {
-    console.error('Error updating cart badge:', e);
-  }
-}
-
-function updateHeaderLocal() {
-  const user = getCurrentUserLocal();
-  const loginBtn = document.getElementById('loginBtn');
-  const logoutBtn = document.getElementById('logoutBtn');
-  
-  if (!loginBtn) return;
-  
-  if (user) {
-    loginBtn.style.display = 'none';
-    if (logoutBtn) logoutBtn.style.display = 'inline-block';
-  } else {
-    loginBtn.style.display = 'inline-block';
-    if (logoutBtn) logoutBtn.style.display = 'none';
-  }
-  
-  updateCartBadgeLocal();
-}
-
-function showNotificationLocal(msg, type) {
+// إشعارات
+function showNotification(msg, type) {
   const el = document.createElement('div');
   el.className = 'notification ' + (type || 'success');
   el.textContent = msg;
+  el.style.cssText = `
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: ${type === 'success' ? '#5ec98a' : '#e05555'};
+    color: white;
+    padding: 12px 30px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 10000;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    animation: slideDown 0.3s ease;
+  `;
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 3000);
 }
 
-function logout() {
-  sessionStorage.removeItem('giftstar_user');
-  window.location.href = 'index.html';
-}
-
-// تشغيل التهيئة
-document.addEventListener('DOMContentLoaded', init);
+// تسجيل الخروج
+window.logout = () => {
+  firebaseLogout();
+};
 </script>
 </body>
 </html>
