@@ -6,6 +6,140 @@
 <title>إتمام الطلب - Gift Star</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<style>
+  /* إضافات لطرق الدفع */
+  .payment-methods {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .payment-method {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--secondary);
+  }
+  
+  .payment-method:hover {
+    border-color: var(--primary);
+    transform: translateX(-5px);
+    box-shadow: 0 5px 15px rgba(200,169,110,0.2);
+  }
+  
+  .payment-method.selected {
+    border-color: var(--primary);
+    background: linear-gradient(135deg, rgba(200,169,110,0.1), rgba(226,201,142,0.1));
+  }
+  
+  .payment-method input[type="radio"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--primary);
+    cursor: pointer;
+  }
+  
+  .payment-icon {
+    color: var(--primary);
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(200,169,110,0.1);
+    border-radius: 50%;
+  }
+  
+  .payment-method-label {
+    flex: 1;
+  }
+  
+  .payment-method-label strong {
+    display: block;
+    color: var(--text);
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+  
+  .payment-method-label span {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  
+  .payment-form {
+    margin-top: 20px;
+    padding: 20px;
+    background: var(--secondary);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+  
+  .bank-info, .cash-info {
+    margin-top: 20px;
+    padding: 20px;
+    background: var(--secondary);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+  
+  .bank-info h4, .cash-info h4 {
+    color: var(--primary);
+    margin-bottom: 15px;
+    font-size: 16px;
+  }
+  
+  .bank-details {
+    background: rgba(0,0,0,0.2);
+    padding: 15px;
+    border-radius: var(--radius-sm);
+    margin: 10px 0;
+  }
+  
+  .bank-details p {
+    margin: 8px 0;
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+  
+  .bank-details strong {
+    color: var(--text);
+  }
+  
+  .warning-box {
+    margin-top: 15px;
+    padding: 12px;
+    background: rgba(243,156,18,0.1);
+    border-radius: 8px;
+    color: #f39c12;
+    font-size: 13px;
+    border: 1px solid rgba(243,156,18,0.3);
+  }
+  
+  .cash-note {
+    background: rgba(200,169,110,0.1);
+    padding: 15px;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+  
+  .cash-note p {
+    margin: 5px 0;
+  }
+  
+  .cash-note .note {
+    font-size: 12px;
+    margin-top: 10px;
+    color: var(--primary);
+  }
+</style>
 </head>
 <body>
 <header class="site-header">
@@ -91,11 +225,12 @@
         <h3>💳 طريقة الدفع</h3>
         
         <div class="payment-methods" id="paymentMethods">
-          <!-- سيتم تعبئتها مباشرة من خلال JavaScript -->
+          <!-- طرق الدفع ستظهر هنا -->
         </div>
 
         <!-- نموذج البطاقة الائتمانية -->
-        <div class="payment-form" id="cardForm" style="display:none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+        <div class="payment-form" id="cardForm" style="display:none;">
+          <h4 style="color: var(--primary); margin-bottom: 15px;">معلومات البطاقة</h4>
           <div class="form-group">
             <label class="form-label">رقم البطاقة</label>
             <input type="text" id="cardNum" class="form-input" placeholder="xxxx xxxx xxxx xxxx" maxlength="19" dir="ltr" oninput="formatCard(this)">
@@ -119,20 +254,28 @@
         </div>
 
         <!-- معلومات التحويل البنكي -->
-        <div id="bankInfo" style="display:none; margin-top: 20px; padding: 20px; background: var(--secondary); border-radius: var(--radius);">
-          <h4 style="color: var(--primary); margin-bottom: 10px;">بيانات التحويل البنكي:</h4>
-          <p style="margin: 8px 0;"><strong>IBAN:</strong> KW91NBOK0000000000001000372151</p>
-          <p style="margin: 8px 0;"><strong>البنك:</strong> بنك الكويت الوطني</p>
-          <p style="margin: 8px 0;"><strong>المستفيد:</strong> شركة جفت ستار</p>
-          <div style="margin-top: 15px; padding: 10px; background: rgba(243,156,18,0.1); border-radius: 8px; color: #f39c12;">
-            ⚠️ يرجى إرسال صورة الإيصال عبر الواتساب بعد التحويل
+        <div class="bank-info" id="bankInfo" style="display:none;">
+          <h4>🏦 بيانات التحويل البنكي</h4>
+          <div class="bank-details">
+            <p><strong>IBAN:</strong> KW91NBOK0000000000001000372151</p>
+            <p><strong>البنك:</strong> بنك الكويت الوطني</p>
+            <p><strong>المستفيد:</strong> شركة جفت ستار</p>
+            <p><strong>المبلغ:</strong> <span id="bankAmount">0.000 د.ك</span></p>
+          </div>
+          <div class="warning-box">
+            ⚠️ يرجى إرسال صورة الإيصال عبر الواتساب بعد التحويل<br>
+            <strong>واتساب: +965 XXXX XXXX</strong>
           </div>
         </div>
 
         <!-- معلومات الدفع نقداً -->
-        <div id="cashInfo" style="display:none; margin-top: 20px; padding: 20px; background: rgba(200,169,110,0.1); border-radius: var(--radius);">
-          <p>📦 سيتم الدفع نقداً عند استلام الطلب</p>
-          <p style="font-size: 13px; color: var(--text-muted); margin-top: 5px;">يرجى تجهيز المبلغ المطلوب بالكامل</p>
+        <div class="cash-info" id="cashInfo" style="display:none;">
+          <h4>💰 الدفع نقداً</h4>
+          <div class="cash-note">
+            <p>📦 سيتم الدفع نقداً عند استلام الطلب</p>
+            <p>💵 المبلغ المطلوب: <strong id="cashAmount">0.000 د.ك</strong></p>
+            <p class="note">يرجى تجهيز المبلغ المطلوب بالكامل عند الاستلام</p>
+          </div>
         </div>
       </div>
 
@@ -224,9 +367,9 @@
       <div style="width: 80px; height: 80px; background: var(--success); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; margin: 0 auto;">✓</div>
       <h3 style="color: var(--success); margin: 20px 0;">تم الطلب بنجاح!</h3>
       <p style="color: var(--text-muted);">سيتم التواصل معك قريباً لتأكيد الطلب</p>
-      <div style="margin-top: 30px;">
+      <div style="margin-top: 30px; display: flex; gap: 10px; justify-content: center;">
         <a href="receipt.html" class="btn-primary">عرض الإيصال</a>
-        <a href="index.html" class="btn-outline" style="margin-right: 10px;">العودة للرئيسية</a>
+        <a href="index.html" class="btn-outline">العودة للرئيسية</a>
       </div>
     </div>
   </div>
@@ -240,35 +383,29 @@
 
 <div class="stars-bg"></div>
 
-<!-- Firebase SDK -->
-<script type="importmap">
-  {
-    "imports": {
-      "firebase/app": "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js",
-      "firebase/firestore": "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js",
-      "firebase/auth": "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js"
-    }
-  }
-</script>
-
-<script type="module" src="js/data.js"></script>
-<script type="module">
-import { getCurrentUser, getCart, createOrder, formatKWD, logout as firebaseLogout, updateHeader } from './js/data.js';
-
+<script src="js/data.js"></script>
+<script>
+// =========================================
+// المتغيرات العامة
+// =========================================
 let selectedPayment = null;
 let paymentMethods = [];
 let appliedPromo = null;
 let orderTotal = 0;
 
+// =========================================
 // تهيئة الصفحة
-window.addEventListener('DOMContentLoaded', async () => {
+// =========================================
+document.addEventListener('DOMContentLoaded', function() {
   console.log('بدء تهيئة صفحة الدفع...');
   
   // تحديث الهيدر
-  updateHeader();
+  if (typeof window.updateHeader === 'function') {
+    window.updateHeader();
+  }
   
   // التحقق من تسجيل الدخول
-  const user = getCurrentUser();
+  const user = (typeof window.getCurrentUser === 'function') ? window.getCurrentUser() : getCurrentUserLocal();
   
   if (!user) { 
     console.log('المستخدم غير مسجل الدخول');
@@ -278,7 +415,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   }
 
   // التحقق من وجود منتجات في السلة
-  const cart = getCart();
+  const cart = (typeof window.getCart === 'function') ? window.getCart() : getCartLocal();
   console.log('المنتجات في السلة:', cart);
   
   if (!cart || cart.length === 0) { 
@@ -300,39 +437,76 @@ window.addEventListener('DOMContentLoaded', async () => {
   loadPaymentMethods();
 });
 
-// طرق الدفع
-function loadPaymentMethods() {
-  const paymentMethodsEl = document.getElementById('paymentMethods');
-  if (!paymentMethodsEl) return;
-  
-  paymentMethods = [
-    { id: 1, name: "بطاقة ائتمانية / مدين", description: "Visa, Mastercard", icon: "card", active: true },
-    { id: 3, name: "تحويل بنكي", description: "تحويل بنكي مباشر", icon: "bank", active: true },
-    { id: 4, name: "نقداً عند الاستلام", description: "الدفع عند الاستلام", icon: "cash", active: true }
-  ];
+// =========================================
+// دوال مساعدة محلية
+// =========================================
+function getCurrentUserLocal() {
+  try {
+    return JSON.parse(sessionStorage.getItem('giftstar_user'));
+  } catch {
+    return null;
+  }
+}
 
+function getCartLocal() {
+  try {
+    const user = getCurrentUserLocal();
+    if (user) {
+      const cart = localStorage.getItem('giftstar_cart_' + user.id);
+      return cart ? JSON.parse(cart) : [];
+    }
+    return JSON.parse(localStorage.getItem('giftstar_cart') || '[]');
+  } catch {
+    return [];
+  }
+}
+
+// =========================================
+// طرق الدفع
+// =========================================
+function loadPaymentMethods() {
+  console.log('جاري تحميل طرق الدفع...');
+  
+  const paymentMethodsEl = document.getElementById('paymentMethods');
+  if (!paymentMethodsEl) {
+    console.error('عنصر طرق الدفع غير موجود');
+    return;
+  }
+  
+  // طرق الدفع الافتراضية
+  paymentMethods = [
+    { id: 1, name: "بطاقة ائتمانية / مدين", description: "Visa, Mastercard, KNET", icon: "card", active: true },
+    { id: 2, name: "تحويل بنكي", description: "تحويل بنكي مباشر", icon: "bank", active: true },
+    { id: 3, name: "نقداً عند الاستلام", description: "الدفع نقداً للمندوب", icon: "cash", active: true }
+  ];
+  
+  console.log('طرق الدفع:', paymentMethods);
+  
+  // أيقونات طرق الدفع
   const icons = {
-    card: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`,
-    bank: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 22V12M7 22V12M11 22V12M15 22V12M19 22V12M1 12l11-9 11 9"/></svg>`,
-    cash: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`
+    card: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`,
+    bank: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 22V12M7 22V12M11 22V12M15 22V12M19 22V12M1 12l11-9 11 9"/></svg>`,
+    cash: `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`
   };
 
+  // عرض طرق الدفع
   let html = '';
   
-  paymentMethods.forEach(m => {
+  paymentMethods.forEach((method, index) => {
     html += `
-      <div class="payment-method" onclick="selectPayment('${m.icon}', this, ${m.id})" id="pm_${m.id}" style="cursor: pointer; display: flex; align-items: center; gap: 15px; padding: 15px; border: 2px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; transition: var(--transition);">
-        <input type="radio" name="payment" value="${m.id}" style="width: 20px; height: 20px; accent-color: var(--primary);">
-        <div class="payment-icon" style="color: var(--primary);">${icons[m.icon] || icons.cash}</div>
-        <div class="payment-method-label" style="flex: 1;">
-          <strong style="display: block; color: var(--text);">${m.name}</strong>
-          <span style="font-size: 13px; color: var(--text-muted);">${m.description}</span>
+      <div class="payment-method" onclick="selectPayment('${method.icon}', this, ${method.id})" id="pm_${method.id}">
+        <input type="radio" name="payment" value="${method.id}" ${index === 0 ? 'checked' : ''}>
+        <div class="payment-icon">${icons[method.icon] || icons.cash}</div>
+        <div class="payment-method-label">
+          <strong>${method.name}</strong>
+          <span>${method.description}</span>
         </div>
       </div>
     `;
   });
 
   paymentMethodsEl.innerHTML = html;
+  console.log('تم عرض طرق الدفع');
 
   // اختيار أول طريقة دفع افتراضياً
   if (paymentMethods.length > 0) {
@@ -345,18 +519,24 @@ function loadPaymentMethods() {
   }
 }
 
+// =========================================
 // اختيار طريقة الدفع
-window.selectPayment = (icon, element, id) => {
+// =========================================
+window.selectPayment = function(icon, element, id) {
+  console.log('تم اختيار طريقة الدفع:', id, icon);
+  
   selectedPayment = id;
   
+  // إزالة التحديد من جميع الطرق
   document.querySelectorAll('.payment-method').forEach(m => {
     m.classList.remove('selected');
-    m.style.borderColor = 'var(--border)';
-    m.style.background = 'none';
+    m.style.borderColor = '';
+    m.style.background = '';
     const radio = m.querySelector('input[type="radio"]');
     if (radio) radio.checked = false;
   });
   
+  // تحديد الطريقة المختارة
   if (element) {
     element.classList.add('selected');
     element.style.borderColor = 'var(--primary)';
@@ -365,6 +545,7 @@ window.selectPayment = (icon, element, id) => {
     if (radio) radio.checked = true;
   }
 
+  // إظهار النموذج المناسب
   const cardForm = document.getElementById('cardForm');
   const bankInfo = document.getElementById('bankInfo');
   const cashInfo = document.getElementById('cashInfo');
@@ -372,12 +553,22 @@ window.selectPayment = (icon, element, id) => {
   if (cardForm) cardForm.style.display = icon === 'card' ? 'block' : 'none';
   if (bankInfo) bankInfo.style.display = icon === 'bank' ? 'block' : 'none';
   if (cashInfo) cashInfo.style.display = icon === 'cash' ? 'block' : 'none';
+  
+  // تحديث المبلغ في طرق الدفع
+  if (icon === 'bank') {
+    document.getElementById('bankAmount').textContent = document.getElementById('chkTotal').textContent;
+  }
+  if (icon === 'cash') {
+    document.getElementById('cashAmount').textContent = document.getElementById('chkTotal').textContent;
+  }
 }
 
+// =========================================
 // حساب إجمالي الطلب
+// =========================================
 function calculateOrderTotal() {
   try {
-    const cart = getCart();
+    const cart = (typeof window.getCart === 'function') ? window.getCart() : getCartLocal();
     const subtotal = cart.reduce((sum, item) => sum + ((item.price || 0) * (item.qty || 0)), 0);
     const delivery = subtotal > 15 ? 0 : 1.500;
     
@@ -388,6 +579,7 @@ function calculateOrderTotal() {
     
     orderTotal = subtotal + delivery - discount;
 
+    // عرض المنتجات
     const orderItemsEl = document.getElementById('orderItems');
     if (orderItemsEl) {
       if (cart.length === 0) {
@@ -411,6 +603,7 @@ function calculateOrderTotal() {
       }
     }
 
+    // تحديث الإجماليات
     document.getElementById('chkSubtotal').textContent = formatKWD(subtotal);
     document.getElementById('chkDelivery').textContent = delivery === 0 ? 'مجاني' : formatKWD(delivery);
     document.getElementById('chkTotal').textContent = formatKWD(orderTotal);
@@ -425,24 +618,45 @@ function calculateOrderTotal() {
     } else {
       discountRow.style.display = 'none';
     }
+    
+    // تحديث المبالغ في طرق الدفع
+    if (document.getElementById('bankAmount')) {
+      document.getElementById('bankAmount').textContent = formatKWD(orderTotal);
+    }
+    if (document.getElementById('cashAmount')) {
+      document.getElementById('cashAmount').textContent = formatKWD(orderTotal);
+    }
+    
   } catch (e) {
     console.error('خطأ في حساب الإجمالي:', e);
   }
 }
 
+// =========================================
 // تنسيقات
-window.formatCard = (input) => {
+// =========================================
+window.formatCard = function(input) {
   let v = input.value.replace(/\D/g, '').substring(0, 16);
   input.value = v.replace(/(.{4})/g, '$1 ').trim();
 }
 
-window.formatExp = (input) => {
+window.formatExp = function(input) {
   let v = input.value.replace(/\D/g, '');
   if (v.length >= 2) v = v.substring(0, 2) + '/' + v.substring(2, 4);
   input.value = v;
 }
 
+function formatKWD(amount) {
+  try {
+    return Number(amount || 0).toFixed(3) + ' د.ك';
+  } catch {
+    return '0.000 د.ك';
+  }
+}
+
+// =========================================
 // التحقق من صحة البيانات
+// =========================================
 function validateForm() {
   const name = document.getElementById('delivName')?.value.trim();
   const phone = document.getElementById('delivPhone')?.value.trim();
@@ -477,7 +691,9 @@ function validateForm() {
   return true;
 }
 
+// =========================================
 // إشعارات
+// =========================================
 function showNotification(msg, type) {
   const el = document.createElement('div');
   el.className = 'notification ' + type;
@@ -501,8 +717,10 @@ function showNotification(msg, type) {
   setTimeout(() => el.remove(), 3000);
 }
 
+// =========================================
 // إتمام الطلب
-window.placeOrder = () => {
+// =========================================
+window.placeOrder = function() {
   if (!validateForm()) return;
   
   const method = paymentMethods.find(m => m.id === selectedPayment);
@@ -518,11 +736,11 @@ window.placeOrder = () => {
   document.getElementById('confirmModal').style.display = 'flex';
 }
 
-window.closeConfirmModal = () => {
+window.closeConfirmModal = function() {
   document.getElementById('confirmModal').style.display = 'none';
 }
 
-window.processOrder = async () => {
+window.processOrder = function() {
   closeConfirmModal();
   
   const btn = document.getElementById('placeOrderBtn');
@@ -538,8 +756,8 @@ window.processOrder = async () => {
     const address = document.getElementById('delivAddress')?.value.trim() || '';
     const notes = document.getElementById('delivNotes')?.value.trim() || '';
     
-    const user = getCurrentUser();
-    const cart = getCart();
+    const user = (typeof window.getCurrentUser === 'function') ? window.getCurrentUser() : getCurrentUserLocal();
+    const cart = (typeof window.getCart === 'function') ? window.getCart() : getCartLocal();
     const subtotal = cart.reduce((sum, item) => sum + ((item.price || 0) * (item.qty || 0)), 0);
     const delivery = subtotal > 15 ? 0 : 1.500;
     const method = paymentMethods.find(m => m.id === selectedPayment);
@@ -555,17 +773,49 @@ window.processOrder = async () => {
       paymentIcon: method ? method.icon : 'cash'
     };
     
-    const result = await createOrder(orderData);
+    // محاولة استخدام createOrder من data.js
+    let result;
+    if (typeof window.createOrder === 'function') {
+      result = window.createOrder(orderData);
+    } else {
+      // حفظ محلي
+      const orders = JSON.parse(localStorage.getItem('giftstar_orders') || '[]');
+      const order = {
+        id: 'GS' + Date.now() + '-' + Math.floor(Math.random() * 10000),
+        ...orderData,
+        userId: user.id,
+        userEmail: user.email,
+        date: new Date().toLocaleDateString('ar-KW'),
+        time: new Date().toLocaleTimeString('ar-KW'),
+        status: 'new',
+        createdAt: new Date().toISOString()
+      };
+      orders.unshift(order);
+      localStorage.setItem('giftstar_orders', JSON.stringify(orders));
+      localStorage.setItem('giftstar_last_order', JSON.stringify(order));
+      sessionStorage.setItem('giftstar_last_order', JSON.stringify(order));
+      result = { success: true, order };
+    }
     
-    if (result.success) {
-      console.log('✅ تم إنشاء الطلب بنجاح:', result.order);
+    if (result && result.success) {
+      console.log('✅ تم إنشاء الطلب بنجاح');
+      
+      // تفريغ السلة
+      if (typeof window.clearCart === 'function') {
+        window.clearCart();
+      } else {
+        const user = getCurrentUserLocal();
+        if (user) {
+          localStorage.removeItem('giftstar_cart_' + user.id);
+        }
+      }
       
       // إظهار نافذة النجاح
       document.getElementById('successModal').style.display = 'flex';
       
       showNotification('تم إتمام الطلب بنجاح', 'success');
     } else {
-      throw new Error(result.error);
+      throw new Error('فشل في إنشاء الطلب');
     }
     
   } catch (error) {
@@ -577,8 +827,10 @@ window.processOrder = async () => {
   }
 }
 
+// =========================================
 // كود الخصم
-window.applyPromo = () => {
+// =========================================
+window.applyPromo = function() {
   const code = document.getElementById('promoCode')?.value.trim() || '';
   
   if (code === 'GIFT10' || code === 'STAR20' || code === 'WELCOME15') {
@@ -590,9 +842,16 @@ window.applyPromo = () => {
   }
 }
 
+// =========================================
 // تسجيل الخروج
-window.logout = () => {
-  firebaseLogout();
+// =========================================
+window.logout = function() {
+  if (typeof window.logout === 'function' && window.logout !== window.logout) {
+    window.logout();
+  } else {
+    sessionStorage.removeItem('giftstar_user');
+    window.location.href = 'index.html';
+  }
 }
 </script>
 </body>
