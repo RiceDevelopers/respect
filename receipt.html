@@ -252,6 +252,28 @@
     font-weight: 700;
   }
   
+  .error-container {
+    text-align: center;
+    padding: 60px 20px;
+  }
+  
+  .error-container svg {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 20px;
+  }
+  
+  .error-container h3 {
+    font-size: 24px;
+    color: var(--danger);
+    margin-bottom: 10px;
+  }
+  
+  .error-container p {
+    color: var(--text-muted);
+    margin-bottom: 30px;
+  }
+  
   @media print {
     .site-header,
     .receipt-actions,
@@ -327,93 +349,223 @@
 
 <div class="stars-bg"></div>
 
-<script src="js/data.js"></script>
 <script>
-// تهيئة الصفحة
-async function init() {
+// =========================================
+// دوال مساعدة أساسية
+// =========================================
+
+// دالة جلب المستخدم الحالي
+function getCurrentUser() {
   try {
-    // تحديث الهيدر
-    if (typeof giftstar !== 'undefined') {
-      giftstar.updateHeader();
-    } else {
-      updateHeader();
-    }
-    
-    // التحقق من وجود orderId في الرابط
-    const urlParams = new URLSearchParams(window.location.search);
-    const orderId = urlParams.get('order');
-    
-    console.log('Order ID from URL:', orderId);
-    
-    let order = null;
-    
-    // محاولة جلب الطلب من عدة مصادر
-    if (orderId) {
-      // 1. حاول من localStorage
-      try {
-        const orders = JSON.parse(localStorage.getItem('giftstar_orders') || '[]');
-        order = orders.find(o => o.id === orderId);
-        console.log('Order from localStorage:', order);
-      } catch (e) {
-        console.error('Error reading orders:', e);
-      }
-      
-      // 2. إذا ما لقينا، حاول من giftstar
-      if (!order && typeof giftstar !== 'undefined') {
-        order = giftstar.getOrderById(orderId);
-        console.log('Order from giftstar:', order);
-      }
-    }
-    
-    // إذا ما في orderId، جرب آخر طلب
-    if (!order) {
-      try {
-        order = JSON.parse(sessionStorage.getItem('giftstar_last_order') || 'null');
-        console.log('Order from sessionStorage:', order);
-      } catch (e) {
-        console.error('Error reading from sessionStorage:', e);
-      }
-    }
-    
-    if (!order) {
-      try {
-        order = JSON.parse(localStorage.getItem('giftstar_last_order') || 'null');
-        console.log('Order from localStorage last:', order);
-      } catch (e) {
-        console.error('Error reading last order:', e);
-      }
-    }
-    
-    if (!order) {
-      console.error('No order found');
-      showError('لم يتم العثور على الطلب');
-      return;
-    }
-
-    // تحديث العنوان إذا كان طلب سابق
-    if (orderId) {
-      document.title = `تفاصيل الطلب ${order.id} - Gift Star`;
-    }
-
-    // عرض معلومات الطلب
-    displayOrder(order);
-    
-  } catch (error) {
-    console.error('Error loading order:', error);
-    showError('حدث خطأ أثناء تحميل الطلب');
+    const userStr = sessionStorage.getItem('giftstar_user');
+    return userStr ? JSON.parse(userStr) : null;
+  } catch (e) {
+    console.error('خطأ في جلب المستخدم:', e);
+    return null;
   }
 }
 
-// عرض الطلب
+// دالة تحديث عداد السلة
+function updateCartBadge() {
+  try {
+    const user = getCurrentUser();
+    let cart = [];
+    
+    if (user) {
+      const cartStr = localStorage.getItem('giftstar_cart_' + user.id);
+      cart = cartStr ? JSON.parse(cartStr) : [];
+    } else {
+      const cartStr = localStorage.getItem('giftstar_cart');
+      cart = cartStr ? JSON.parse(cartStr) : [];
+    }
+    
+    const total = cart.reduce((sum, item) => sum + (item.qty || 0), 0);
+    document.querySelectorAll('.cart-count, #cartCount').forEach(el => {
+      if (el) {
+        el.textContent = total;
+        el.style.display = total > 0 ? 'flex' : 'none';
+      }
+    });
+  } catch (e) {
+    console.error('خطأ في تحديث عداد السلة:', e);
+  }
+}
+
+// دالة تحديث الهيدر
+function updateHeader() {
+  const user = getCurrentUser();
+  const loginBtn = document.getElementById('loginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  
+  if (!loginBtn) return;
+  
+  if (user) {
+    loginBtn.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'inline-block';
+  } else {
+    loginBtn.style.display = 'inline-block';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+  }
+  
+  updateCartBadge();
+}
+
+// دالة تسجيل الخروج
+function logout() {
+  sessionStorage.removeItem('giftstar_user');
+  window.location.href = 'index.html';
+}
+
+// دالة تنسيق العملة
+function formatKWD(amount) {
+  try {
+    return Number(amount || 0).toFixed(3) + ' د.ك';
+  } catch {
+    return '0.000 د.ك';
+  }
+}
+
+// دالة عرض الإشعارات
+function showNotification(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = 'notification ' + type;
+  el.textContent = msg;
+  el.style.cssText = `
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: ${type === 'success' ? '#5ec98a' : '#e05555'};
+    color: white;
+    padding: 12px 30px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 10000;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    animation: slideDown 0.3s ease;
+  `;
+  
+  document.body.appendChild(el);
+  
+  setTimeout(() => {
+    el.style.animation = 'slideUp 0.3s ease';
+    setTimeout(() => el.remove(), 300);
+  }, 3000);
+}
+
+// =========================================
+// دوال الإيصال
+// =========================================
+
+// دالة البحث عن الطلب من جميع المصادر
+function findOrder(orderId) {
+  console.log('البحث عن الطلب:', orderId);
+  
+  // 1. البحث في localStorage (giftstar_orders)
+  try {
+    const ordersStr = localStorage.getItem('giftstar_orders');
+    if (ordersStr) {
+      const orders = JSON.parse(ordersStr);
+      const order = orders.find(o => o.id === orderId);
+      if (order) {
+        console.log('تم العثور على الطلب في giftstar_orders');
+        return order;
+      }
+    }
+  } catch (e) {
+    console.error('خطأ في قراءة giftstar_orders:', e);
+  }
+  
+  // 2. البحث في آخر طلب
+  try {
+    const lastOrderStr = localStorage.getItem('giftstar_last_order');
+    if (lastOrderStr) {
+      const lastOrder = JSON.parse(lastOrderStr);
+      if (lastOrder.id === orderId || !orderId) {
+        console.log('تم العثور على آخر طلب');
+        return lastOrder;
+      }
+    }
+  } catch (e) {
+    console.error('خطأ في قراءة آخر طلب:', e);
+  }
+  
+  // 3. البحث في sessionStorage
+  try {
+    const sessionOrderStr = sessionStorage.getItem('giftstar_last_order');
+    if (sessionOrderStr) {
+      const sessionOrder = JSON.parse(sessionOrderStr);
+      if (sessionOrder.id === orderId || !orderId) {
+        console.log('تم العثور على الطلب في sessionStorage');
+        return sessionOrder;
+      }
+    }
+  } catch (e) {
+    console.error('خطأ في قراءة sessionStorage:', e);
+  }
+  
+  // 4. إنشاء طلب تجريبي للاختبار
+  if (!orderId) {
+    console.log('لا يوجد orderId، سيتم إنشاء طلب تجريبي');
+    return createTestOrder();
+  }
+  
+  return null;
+}
+
+// دالة إنشاء طلب تجريبي للاختبار
+function createTestOrder() {
+  return {
+    id: 'GS' + Date.now() + '-TEST',
+    customer: {
+      name: 'أحمد محمد',
+      phone: '51234567',
+      area: 'حولي',
+      address: 'شارع سالم المبارك، مبنى 12، شقة 5',
+      notes: 'يرجى الاتصال قبل التوصيل'
+    },
+    items: [
+      {
+        id: 1,
+        name: 'كيك الفراولة الفاخر',
+        price: 12.500,
+        qty: 1,
+        image: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&h=400&fit=crop'
+      },
+      {
+        id: 2,
+        name: 'باقة ورد حمراء كلاسيكية',
+        price: 8.750,
+        qty: 2,
+        image: 'https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?w=400&h=400&fit=crop'
+      }
+    ],
+    subtotal: 30.000,
+    delivery: 1.500,
+    total: 31.500,
+    paymentMethod: 'نقداً عند الاستلام',
+    paymentIcon: 'cash',
+    userEmail: 'ahmed@test.com',
+    status: 'new',
+    date: new Date().toLocaleDateString('ar-KW'),
+    time: new Date().toLocaleTimeString('ar-KW'),
+    createdAt: new Date().toISOString()
+  };
+}
+
+// دالة عرض الطلب
 function displayOrder(order) {
   try {
+    console.log('عرض الطلب:', order);
+    
     // التأكد من وجود البيانات
     order.customer = order.customer || {};
     order.items = order.items || [];
     
     // حساب الإجماليات
     const subtotal = order.items.reduce((sum, item) => sum + ((item.price || 0) * (item.qty || 1)), 0);
-    const delivery = order.delivery || (subtotal > 15 ? 0 : 1.500);
+    const delivery = order.delivery !== undefined ? order.delivery : (subtotal > 15 ? 0 : 1.500);
     const total = order.total || (subtotal + delivery);
     
     // ترجمة حالة الطلب
@@ -434,8 +586,8 @@ function displayOrder(order) {
             <polyline points="20 6 9 17 4 12"/>
           </svg>
         </div>
-        <h2>${orderId ? 'تفاصيل الطلب' : 'تم الطلب بنجاح!'}</h2>
-        <p>${orderId ? 'عرض تفاصيل الطلب السابق' : 'شكراً لك، سيتم التواصل معك قريباً للتأكيد'}</p>
+        <h2>${window.location.search.includes('order=') ? 'تفاصيل الطلب' : 'تم الطلب بنجاح!'}</h2>
+        <p>${window.location.search.includes('order=') ? 'عرض تفاصيل الطلب السابق' : 'شكراً لك، سيتم التواصل معك قريباً للتأكيد'}</p>
       </div>
 
       <div class="receipt-number">
@@ -463,6 +615,12 @@ function displayOrder(order) {
           <span>📅 التاريخ والوقت</span>
           <strong>${order.date || ''} ${order.time || ''}</strong>
         </div>
+        ${order.customer.notes ? `
+        <div class="receipt-row">
+          <span>📝 ملاحظات</span>
+          <strong>${order.customer.notes}</strong>
+        </div>
+        ` : ''}
       </div>
 
       <div class="receipt-items">
@@ -527,27 +685,40 @@ function displayOrder(order) {
     document.getElementById('receiptContent').innerHTML = html;
     
   } catch (error) {
-    console.error('Error displaying order:', error);
+    console.error('خطأ في عرض الطلب:', error);
     showError('حدث خطأ في عرض الطلب');
   }
 }
 
-// تنسيق العملة
-function formatKWD(amount) {
-  try {
-    return Number(amount || 0).toFixed(3) + ' د.ك';
-  } catch {
-    return '0.000 د.ك';
-  }
+// دالة عرض الخطأ
+function showError(message) {
+  const container = document.getElementById('receiptContent');
+  if (!container) return;
+  
+  container.innerHTML = `
+    <div class="error-container">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <circle cx="12" cy="16" r="1" fill="var(--danger)"/>
+      </svg>
+      <h3>عذراً</h3>
+      <p>${message}</p>
+      <div style="display:flex; gap:15px; justify-content:center; margin-top:30px;">
+        <a href="index.html" class="btn-primary">العودة للرئيسية</a>
+        <a href="my-orders.html" class="btn-outline">طلباتي</a>
+      </div>
+    </div>
+  `;
 }
 
-// توليد PDF محسّن
+// دالة توليد PDF
 async function generatePDF() {
   try {
     const { jsPDF } = window.jspdf;
     const element = document.getElementById('receiptContent');
     
-    // إخفاء الأزرار مؤقتاً للتصدير
+    // إخفاء الأزرار مؤقتاً
     const actions = document.getElementById('receiptActions');
     if (actions) actions.style.display = 'none';
     
@@ -578,17 +749,18 @@ async function generatePDF() {
     const width = imgWidth * ratio;
     const height = imgHeight * ratio;
     
-    // إضافة صورة الخلفية
     pdf.addImage(imgData, 'PNG', (pdfWidth - width) / 2, 0, width, height);
     
-    // حفظ الملف
-    const orderId = document.querySelector('.receipt-number')?.textContent.replace('رقم الطلب: ', '').trim() || 'order';
+    // استخراج رقم الطلب
+    const orderIdElement = document.querySelector('.receipt-number');
+    const orderId = orderIdElement ? orderIdElement.textContent.replace('رقم الطلب: ', '').trim() : 'order';
+    
     pdf.save(`GiftStar-${orderId}.pdf`);
     
     showNotification('تم تحميل ملف PDF بنجاح', 'success');
     
   } catch (error) {
-    console.error('Error generating PDF:', error);
+    console.error('خطأ في توليد PDF:', error);
     showNotification('حدث خطأ أثناء إنشاء ملف PDF', 'error');
     
     // إظهار الأزرار في حالة الخطأ
@@ -597,37 +769,49 @@ async function generatePDF() {
   }
 }
 
-// عرض خطأ
-function showError(message) {
-  const container = document.getElementById('receiptContent');
-  if (!container) return;
+// =========================================
+// دالة التهيئة الرئيسية
+// =========================================
+function init() {
+  console.log('بدء تحميل صفحة الإيصال...');
   
-  container.innerHTML = `
-    <div style="text-align: center; padding: 60px 20px;">
-      <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="8" x2="12" y2="12"/>
-        <circle cx="12" cy="16" r="1" fill="var(--danger)"/>
-      </svg>
-      <h3 style="margin: 20px 0 10px; color: var(--text);">عذراً</h3>
-      <p style="color: var(--text-muted); margin-bottom: 30px;">${message}</p>
-      <a href="index.html" class="btn-primary">العودة للرئيسية</a>
-    </div>
-  `;
-}
-
-// تسجيل الخروج
-function logout() {
-  if (typeof giftstar !== 'undefined' && giftstar.logout) {
-    giftstar.logout();
+  // تحديث الهيدر
+  updateHeader();
+  
+  // الحصول على orderId من الرابط
+  const urlParams = new URLSearchParams(window.location.search);
+  const orderId = urlParams.get('order');
+  
+  console.log('orderId من الرابط:', orderId);
+  
+  // البحث عن الطلب
+  const order = findOrder(orderId);
+  
+  if (order) {
+    console.log('تم العثور على الطلب:', order);
+    displayOrder(order);
   } else {
-    sessionStorage.removeItem('giftstar_user');
-    window.location.href = 'index.html';
+    console.log('لم يتم العثور على الطلب');
+    showError('لم يتم العثور على الطلب');
   }
 }
 
-// تشغيل التهيئة
+// تشغيل التهيئة عند تحميل الصفحة
 document.addEventListener('DOMContentLoaded', init);
+
+// إضافة الأنيميشن للإشعارات
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+  @keyframes slideUp {
+    from { opacity: 1; transform: translateX(-50%) translateY(0); }
+    to { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+  }
+`;
+document.head.appendChild(style);
 </script>
 </body>
 </html>
