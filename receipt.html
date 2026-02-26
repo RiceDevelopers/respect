@@ -81,25 +81,63 @@ async function init() {
     const urlParams = new URLSearchParams(window.location.search);
     const orderId = urlParams.get('order');
     
-    let order;
+    console.log('Order ID from URL:', orderId);
     
+    let order = null;
+    
+    // محاولة جلب الطلب من عدة مصادر
     if (orderId) {
-      // جلب الطلب من قاعدة البيانات
-      const orders = await giftstar.getData('orders') || [];
-      order = orders.find(o => o.id === orderId);
-      
-      if (order) {
-        document.getElementById('receiptTitle').textContent = 'تفاصيل الطلب';
-        document.getElementById('receiptSubtitle').textContent = 'عرض تفاصيل الطلب السابق';
+      // 1. حاول من localStorage أولاً
+      try {
+        const orders = JSON.parse(localStorage.getItem('giftstar_orders') || '[]');
+        order = orders.find(o => o.id === orderId);
+        console.log('Order from localStorage:', order);
+      } catch (e) {
+        console.error('Error reading orders from localStorage:', e);
       }
-    } else {
-      // جلب آخر طلب من session
-      order = JSON.parse(sessionStorage.getItem('giftstar_last_order') || 'null');
+      
+      // 2. إذا ما لقينا، حاول من giftstar
+      if (!order && typeof giftstar !== 'undefined' && giftstar.getData) {
+        try {
+          const orders = await giftstar.getData('orders');
+          order = orders.find(o => o.id === orderId);
+          console.log('Order from giftstar:', order);
+        } catch (e) {
+          console.error('Error reading orders from giftstar:', e);
+        }
+      }
+    }
+    
+    // إذا ما في orderId، جرب آخر طلب من session
+    if (!order) {
+      try {
+        order = JSON.parse(sessionStorage.getItem('giftstar_last_order') || 'null');
+        console.log('Order from sessionStorage:', order);
+      } catch (e) {
+        console.error('Error reading from sessionStorage:', e);
+      }
+    }
+    
+    // إذا لسا ما لقينا، جرب آخر طلب من localStorage
+    if (!order) {
+      try {
+        order = JSON.parse(localStorage.getItem('giftstar_last_order') || 'null');
+        console.log('Order from localStorage last:', order);
+      } catch (e) {
+        console.error('Error reading last order:', e);
+      }
     }
     
     if (!order) {
+      console.error('No order found');
       showError('لم يتم العثور على الطلب');
       return;
+    }
+
+    // تحديث العنوان إذا كان طلب سابق
+    if (orderId) {
+      document.getElementById('receiptTitle').textContent = 'تفاصيل الطلب';
+      document.getElementById('receiptSubtitle').textContent = 'عرض تفاصيل الطلب السابق';
     }
 
     // عرض معلومات الطلب
@@ -107,103 +145,118 @@ async function init() {
     
   } catch (error) {
     console.error('Error loading order:', error);
-    showError('حدث خطأ أثناء تحميل الطلب');
+    showError('حدث خطأ أثناء تحميل الطلب: ' + error.message);
   }
 }
 
 // عرض الطلب
 function displayOrder(order) {
-  // رقم الطلب
-  document.getElementById('receiptNum').innerHTML = `
-    <div class="receipt-row">
-      <span>رقم الطلب</span>
-      <strong>${order.id}</strong>
-    </div>
-  `;
-
-  // تفاصيل العميل
-  const customer = order.customer || {};
-  document.getElementById('receiptDetails').innerHTML = `
-    <div class="receipt-row">
-      <span>👤 الاسم</span>
-      <strong>${customer.name || 'غير محدد'}</strong>
-    </div>
-    <div class="receipt-row">
-      <span>📞 الهاتف</span>
-      <strong>${customer.phone || 'غير محدد'}</strong>
-    </div>
-    <div class="receipt-row">
-      <span>📍 المنطقة</span>
-      <strong>${customer.area || 'غير محدد'}</strong>
-    </div>
-    <div class="receipt-row">
-      <span>🏠 العنوان</span>
-      <strong>${customer.address || 'غير محدد'}</strong>
-    </div>
-    <div class="receipt-row">
-      <span>📅 التاريخ</span>
-      <strong>${order.date || ''} - ${order.time || ''}</strong>
-    </div>
-  `;
-
-  // المنتجات
-  const items = order.items || [];
-  document.getElementById('receiptItems').innerHTML = items.map(item => `
-    <div class="receipt-row">
-      <span>${item.name} <small>(x${item.qty})</small></span>
-      <strong>${formatKWD(item.price * item.qty)}</strong>
-    </div>
-  `).join('') + `
-    <div class="receipt-row" style="border-top: 1px dashed var(--border); margin-top: 8px; padding-top: 8px;">
-      <span>🚚 التوصيل</span>
-      <strong>${order.delivery === 0 ? 'مجاني' : formatKWD(order.delivery || 0)}</strong>
-    </div>
-  `;
-
-  // المجموع
-  document.getElementById('receiptTotal').innerHTML = `
-    <span>الإجمالي النهائي</span>
-    <span class="total-amount">${formatKWD(order.total || 0)}</span>
-  `;
-
-  // طريقة الدفع
-  document.getElementById('receiptPayment').innerHTML = `
-    <div class="receipt-row">
-      <span>💳 طريقة الدفع</span>
-      <strong>${order.paymentMethod || 'غير محدد'}</strong>
-    </div>
-  `;
-
-  // حالة الطلب
-  if (order.status) {
-    const statusText = {
-      'new': 'جديد',
-      'processing': 'قيد المعالجة',
-      'delivered': 'تم التوصيل',
-      'cancelled': 'ملغي'
-    }[order.status] || order.status;
+  try {
+    // التأكد من وجود البيانات
+    order.customer = order.customer || {};
+    order.items = order.items || [];
     
-    document.getElementById('receiptStatus').innerHTML = `
-      <div class="receipt-row" style="margin-top: 16px; padding-top: 16px; border-top: 2px solid var(--border);">
-        <span>📊 حالة الطلب</span>
-        <span class="status-badge ${order.status}">${statusText}</span>
+    // رقم الطلب
+    document.getElementById('receiptNum').innerHTML = `
+      <div class="receipt-row">
+        <span>رقم الطلب</span>
+        <strong>${order.id || 'غير محدد'}</strong>
       </div>
     `;
-  }
 
-  // إذا كان الطلب من العرض المباشر (ليس من السجل)، نخفي بعض الأزرار
-  if (!orderId) {
-    const actions = document.getElementById('receiptActions');
-    actions.innerHTML = `
-      <button class="btn-primary" onclick="printPDF()">📄 طباعة PDF</button>
-      <a href="index.html" class="btn-outline">🏠 العودة للرئيسية</a>
+    // تفاصيل العميل
+    document.getElementById('receiptDetails').innerHTML = `
+      <div class="receipt-row">
+        <span>👤 الاسم</span>
+        <strong>${order.customer.name || 'غير محدد'}</strong>
+      </div>
+      <div class="receipt-row">
+        <span>📞 الهاتف</span>
+        <strong>${order.customer.phone ? '965' + order.customer.phone : 'غير محدد'}</strong>
+      </div>
+      <div class="receipt-row">
+        <span>📍 المنطقة</span>
+        <strong>${order.customer.area || 'غير محدد'}</strong>
+      </div>
+      <div class="receipt-row">
+        <span>🏠 العنوان</span>
+        <strong>${order.customer.address || 'غير محدد'}</strong>
+      </div>
+      <div class="receipt-row">
+        <span>📅 التاريخ</span>
+        <strong>${order.date || ''} ${order.time || ''}</strong>
+      </div>
     `;
+
+    // المنتجات
+    const itemsHTML = order.items.map(item => `
+      <div class="receipt-row">
+        <span>${item.name || 'منتج'} <small>(x${item.qty || 1})</small></span>
+        <strong>${formatKWD((item.price || 0) * (item.qty || 1))}</strong>
+      </div>
+    `).join('');
+
+    document.getElementById('receiptItems').innerHTML = itemsHTML + `
+      <div class="receipt-row" style="border-top: 1px dashed var(--border); margin-top: 8px; padding-top: 8px;">
+        <span>🚚 التوصيل</span>
+        <strong>${order.delivery === 0 ? 'مجاني' : formatKWD(order.delivery || 0)}</strong>
+      </div>
+    `;
+
+    // المجموع
+    document.getElementById('receiptTotal').innerHTML = `
+      <span>الإجمالي النهائي</span>
+      <span class="total-amount">${formatKWD(order.total || 0)}</span>
+    `;
+
+    // طريقة الدفع
+    document.getElementById('receiptPayment').innerHTML = `
+      <div class="receipt-row">
+        <span>💳 طريقة الدفع</span>
+        <strong>${order.paymentMethod || 'غير محدد'}</strong>
+      </div>
+    `;
+
+    // حالة الطلب
+    if (order.status) {
+      const statusText = {
+        'new': 'جديد',
+        'processing': 'قيد المعالجة',
+        'delivered': 'تم التوصيل',
+        'cancelled': 'ملغي'
+      }[order.status] || order.status;
+      
+      document.getElementById('receiptStatus').innerHTML = `
+        <div class="receipt-row" style="margin-top: 16px; padding-top: 16px; border-top: 2px solid var(--border);">
+          <span>📊 حالة الطلب</span>
+          <span class="status-badge ${order.status}">${statusText}</span>
+        </div>
+      `;
+    }
+
+    // إذا كان الطلب من العرض المباشر (ليس من السجل)، نخفي بعض الأزرار
+    if (!window.location.search.includes('order=')) {
+      const actions = document.getElementById('receiptActions');
+      if (actions) {
+        actions.innerHTML = `
+          <button class="btn-primary" onclick="printPDF()">📄 طباعة PDF</button>
+          <a href="index.html" class="btn-outline">🏠 العودة للرئيسية</a>
+        `;
+      }
+    }
+  } catch (error) {
+    console.error('Error displaying order:', error);
+    showError('حدث خطأ في عرض الطلب');
   }
 }
 
 // تنسيق العملة
 function formatKWD(amount) {
-  return Number(amount).toFixed(3) + ' د.ك';
+  try {
+    return Number(amount || 0).toFixed(3) + ' د.ك';
+  } catch {
+    return '0.000 د.ك';
+  }
 }
 
 // طباعة PDF
@@ -217,8 +270,13 @@ function printPDF() {
     });
     
     // جلب الطلب من الصفحة
-    const orderId = document.querySelector('#receiptNum strong')?.textContent || '';
-    const order = JSON.parse(sessionStorage.getItem('giftstar_last_order') || 'null');
+    let order = null;
+    
+    try {
+      order = JSON.parse(sessionStorage.getItem('giftstar_last_order') || 'null');
+    } catch (e) {
+      console.error('Error reading order for PDF:', e);
+    }
     
     if (!order) {
       alert('لا يوجد طلب للطباعة');
@@ -250,8 +308,8 @@ function printPDF() {
     
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(11);
-    doc.text('Order ID: ' + order.id, 20, 56);
-    doc.text('Date: ' + order.date + ' ' + order.time, 20, 63);
+    doc.text('Order ID: ' + (order.id || 'N/A'), 20, 56);
+    doc.text('Date: ' + (order.date || '') + ' ' + (order.time || ''), 20, 63);
 
     // معلومات العميل
     doc.line(20, 68, 190, 68);
@@ -259,7 +317,7 @@ function printPDF() {
     doc.text('Customer Information:', 20, 76);
     doc.setFont('helvetica', 'normal');
     doc.text('Name: ' + (order.customer?.name || 'N/A'), 20, 84);
-    doc.text('Phone: ' + (order.customer?.phone || 'N/A'), 20, 91);
+    doc.text('Phone: +965 ' + (order.customer?.phone || 'N/A'), 20, 91);
     doc.text('Area: ' + (order.customer?.area || 'N/A'), 20, 98);
     doc.text('Address: ' + (order.customer?.address || 'N/A'), 20, 105);
 
@@ -273,10 +331,10 @@ function printPDF() {
     let subtotal = 0;
     
     (order.items || []).forEach(item => {
-      const itemTotal = item.price * item.qty;
+      const itemTotal = (item.price || 0) * (item.qty || 1);
       subtotal += itemTotal;
       
-      doc.text(item.name + ' x' + item.qty, 20, y);
+      doc.text((item.name || 'Product') + ' x' + (item.qty || 1), 20, y);
       doc.text(formatKWD(itemTotal), 170, y, { align: 'right' });
       y += 8;
       
@@ -295,7 +353,7 @@ function printPDF() {
     
     y += 8;
     doc.text('Delivery:', 20, y);
-    doc.text(order.delivery === 0 ? 'Free' : formatKWD(order.delivery), 170, y, { align: 'right' });
+    doc.text((order.delivery === 0 ? 'Free' : formatKWD(order.delivery || 0)), 170, y, { align: 'right' });
     
     y += 8;
     doc.setFont('helvetica', 'bold');
@@ -319,7 +377,7 @@ function printPDF() {
     doc.text('www.giftstar.com.kw', 105, y + 6, { align: 'center' });
 
     // حفظ الملف
-    doc.save('GiftStar-Receipt-' + order.id + '.pdf');
+    doc.save('GiftStar-Receipt-' + (order.id || 'order') + '.pdf');
     
   } catch (error) {
     console.error('Error generating PDF:', error);
@@ -330,6 +388,8 @@ function printPDF() {
 // عرض خطأ
 function showError(message) {
   const container = document.querySelector('.receipt-card');
+  if (!container) return;
+  
   container.innerHTML = `
     <div style="text-align: center; padding: 40px 20px;">
       <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2">
@@ -346,20 +406,159 @@ function showError(message) {
 
 // تحديث عداد السلة
 function updateCartCount() {
-  const cart = giftstar.getCart();
-  const total = cart.reduce((sum, item) => sum + item.qty, 0);
-  document.querySelectorAll('.cart-count').forEach(el => {
-    if (el) el.textContent = total;
-  });
+  try {
+    let cart = [];
+    
+    if (typeof giftstar !== 'undefined' && giftstar.getCart) {
+      cart = giftstar.getCart();
+    } else {
+      cart = JSON.parse(localStorage.getItem('giftstar_cart') || '[]');
+    }
+    
+    const total = cart.reduce((sum, item) => sum + (item.qty || 0), 0);
+    document.querySelectorAll('.cart-count, #cartCount').forEach(el => {
+      if (el) el.textContent = total;
+    });
+  } catch (e) {
+    console.error('Error updating cart count:', e);
+  }
 }
 
 // تسجيل الخروج
 function logout() {
-  giftstar.logout();
+  if (typeof giftstar !== 'undefined' && giftstar.logout) {
+    giftstar.logout();
+  } else {
+    sessionStorage.removeItem('giftstar_user');
+    window.location.href = 'index.html';
+  }
 }
 
 // تشغيل التهيئة
 document.addEventListener('DOMContentLoaded', init);
 </script>
+
+<style>
+/* أنماط إضافية للإيصال */
+.receipt-details {
+  margin-bottom: 20px;
+}
+
+.receipt-items {
+  margin: 20px 0;
+  padding: 20px 0;
+  border-top: 2px dashed var(--border);
+  border-bottom: 2px dashed var(--border);
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  color: var(--text-muted);
+}
+
+.receipt-row strong {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.receipt-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--primary);
+  border-top: 2px solid var(--border);
+  margin-top: 10px;
+}
+
+.total-amount {
+  font-size: 24px;
+  color: var(--primary);
+}
+
+.receipt-payment {
+  margin: 15px 0;
+  padding: 15px 0;
+  border-top: 1px solid var(--border);
+}
+
+.receipt-status {
+  margin: 15px 0 25px;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 6px 18px;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.status-badge.new {
+  background: rgba(94,201,138,0.2);
+  color: #5ec98a;
+  border: 1px solid rgba(94,201,138,0.3);
+}
+
+.status-badge.processing {
+  background: rgba(243,156,18,0.2);
+  color: #f39c12;
+  border: 1px solid rgba(243,156,18,0.3);
+}
+
+.status-badge.delivered {
+  background: rgba(52,152,219,0.2);
+  color: #3498db;
+  border: 1px solid rgba(52,152,219,0.3);
+}
+
+.status-badge.cancelled {
+  background: rgba(224,85,85,0.2);
+  color: #e05555;
+  border: 1px solid rgba(224,85,85,0.3);
+}
+
+.receipt-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 35px;
+}
+
+.receipt-actions .btn-primary,
+.receipt-actions .btn-outline {
+  flex: 1;
+  text-align: center;
+  padding: 14px;
+  font-size: 15px;
+}
+
+@media print {
+  .site-header,
+  .receipt-actions,
+  .stars-bg {
+    display: none !important;
+  }
+  
+  .receipt-card {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+}
+
+@media (max-width: 768px) {
+  .receipt-actions {
+    flex-direction: column;
+  }
+  
+  .receipt-actions .btn-primary,
+  .receipt-actions .btn-outline {
+    width: 100%;
+  }
+}
+</style>
 </body>
 </html>
