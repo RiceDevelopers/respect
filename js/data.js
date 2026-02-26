@@ -1,13 +1,11 @@
 // =========================================
-// Gift Star - Data Store مع Firebase (الإصدار النهائي)
+// Gift Star - Data Store مع Firebase وإشعارات فورية
 // =========================================
 
-// =========================================
-// Firebase Configuration
-// =========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
 import { getFirestore, collection, addDoc, query, where, getDocs, doc, getDoc, updateDoc, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-messaging.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-analytics.js";
 
 // Firebase configuration
@@ -26,8 +24,180 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const db = getFirestore(app);
 const auth = getAuth(app);
+const messaging = getMessaging(app);
+
+// Web Push Key (من إعدادات المشروع)
+const VAPID_KEY = "BNw1PdYdUT5h8YZxwNPwsHb77s5C2L0IwMhyr0zlHUyEJs4gpgx5tqfje6BgBgZo6QssvaekMAQMYNl5r7E70G4";
 
 console.log('✅ Firebase initialized successfully');
+
+// =========================================
+// نظام الإشعارات الفورية (Web Push)
+// =========================================
+
+// طلب إذن الإشعارات
+async function requestNotificationPermission() {
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            console.log('✅ إذن الإشعارات مقبول');
+            
+            // الحصول على FCM Token
+            const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+            console.log('✅ FCM Token:', token);
+            
+            // حفظ التوكن للمستخدم الحالي
+            const user = getCurrentUser();
+            if (user) {
+                saveUserToken(user.id, token);
+            }
+            
+            return token;
+        } else {
+            console.log('❌ تم رفض الإشعارات');
+            return null;
+        }
+    } catch (error) {
+        console.error('❌ خطأ في طلب الإشعارات:', error);
+        return null;
+    }
+}
+
+// حفظ توكن المستخدم
+async function saveUserToken(userId, token) {
+    try {
+        const tokens = getItem('notification_tokens', []);
+        const existingIndex = tokens.findIndex(t => t.userId === userId);
+        
+        if (existingIndex !== -1) {
+            tokens[existingIndex].token = token;
+            tokens[existingIndex].updatedAt = new Date().toISOString();
+        } else {
+            tokens.push({
+                userId,
+                token,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            });
+        }
+        
+        setItem('notification_tokens', tokens);
+        
+        // حفظ في Firebase أيضاً
+        await addDoc(collection(db, "notification_tokens"), {
+            userId,
+            token,
+            createdAt: serverTimestamp(),
+            userAgent: navigator.userAgent
+        });
+        
+        return true;
+    } catch (error) {
+        console.error('خطأ في حفظ التوكن:', error);
+        return false;
+    }
+}
+
+// إرسال إشعار للمدير عند طلب جديد
+async function sendAdminNotification(order) {
+    try {
+        // جلب جميع توكنات المديرين
+        const users = getItem('users', []);
+        const admins = users.filter(u => u.role === 'admin');
+        
+        const tokens = getItem('notification_tokens', []);
+        const adminTokens = tokens.filter(t => 
+            admins.some(a => a.id === t.userId)
+        );
+        
+        // إرسال الإشعار لكل مدير
+        for (const adminToken of adminTokens) {
+            await sendPushNotification(adminToken.token, {
+                title: '🛍️ طلب جديد',
+                body: `طلب جديد بقيمة ${formatKWD(order.total)} من ${order.customer.name}`,
+                icon: '/logo.png',
+                badge: '/badge.png',
+                data: {
+                    orderId: order.id,
+                    url: `/admin/index.html?order=${order.id}`
+                }
+            });
+        }
+        
+        console.log(`✅ تم إرسال إشعار لـ ${adminTokens.length} مدير`);
+        
+    } catch (error) {
+        console.error('❌ خطأ في إرسال إشعار للمدير:', error);
+    }
+}
+
+// إرسال إشعار للمستخدم عند تحديث الطلب
+async function sendUserNotification(userId, order, status) {
+    try {
+        const tokens = getItem('notification_tokens', []);
+        const userToken = tokens.find(t => t.userId === userId);
+        
+        if (!userToken) return;
+        
+        const statusMessages = {
+            'new': 'تم استلام طلبك بنجاح',
+            'processing': 'طلبك قيد التجهيز',
+            'delivered': 'تم توصيل طلبك',
+            'cancelled': 'تم إلغاء الطلب'
+        };
+        
+        await sendPushNotification(userToken.token, {
+            title: '📦 تحديث حالة الطلب',
+            body: statusMessages[status] || `تم تحديث حالة الطلب إلى ${status}`,
+            icon: '/logo.png',
+            badge: '/badge.png',
+            data: {
+                orderId: order.id,
+                url: `/receipt.html?order=${order.id}`
+            }
+        });
+        
+    } catch (error) {
+        console.error('خطأ في إرسال إشعار للمستخدم:', error);
+    }
+}
+
+// إرسال الإشعار الفعلي (هذه دالة مساعدة، في الواقع سنستخدم Firebase Cloud Messaging)
+async function sendPushNotification(token, payload) {
+    // هذا الكود سيعمل مع FCM
+    // للتبسيط، نستخدم الإشعارات المحلية
+    if (Notification.permission === 'granted') {
+        new Notification(payload.title, {
+            body: payload.body,
+            icon: payload.icon,
+            badge: payload.badge,
+            data: payload.data
+        });
+    }
+}
+
+// الاستماع للإشعارات أثناء تشغيل التطبيق
+function setupMessageListener() {
+    onMessage(messaging, (payload) => {
+        console.log('📨 إشعار جديد:', payload);
+        
+        // عرض الإشعار
+        if (Notification.permission === 'granted') {
+            new Notification(payload.notification.title, {
+                body: payload.notification.body,
+                icon: payload.notification.icon,
+                badge: payload.notification.badge,
+                data: payload.data
+            });
+        }
+        
+        // تحديث الصفحة إذا كنا في صفحة الطلبات
+        if (window.location.pathname.includes('my-orders') || 
+            window.location.pathname.includes('admin')) {
+            setTimeout(() => location.reload(), 2000);
+        }
+    });
+}
 
 // =========================================
 // دوال التخزين المحلية (كـ Fallback)
@@ -57,6 +227,37 @@ function setItem(key, value) {
 // =========================================
 function initData() {
     console.log('تهيئة البيانات...');
+    
+    // التحقق من وجود المستخدمين
+    let users = getItem('users', []);
+    if (users.length === 0) {
+        // إنشاء حساب المدير
+        users.push({
+            id: 1,
+            name: "مدير المتجر",
+            email: "admin@giftstar.kw",
+            password: "Admin@2024",
+            role: "admin",
+            verified: true,
+            createdAt: new Date().toISOString(),
+            phone: "51234567"
+        });
+        
+        // إنشاء مستخدم تجريبي
+        users.push({
+            id: 2,
+            name: "أحمد محمد",
+            email: "ahmed@test.com",
+            password: "12345678",
+            role: "customer",
+            verified: true,
+            createdAt: new Date().toISOString(),
+            phone: "51234568"
+        });
+        
+        setItem('users', users);
+        console.log('تم إنشاء المستخدمين');
+    }
     
     // التحقق من وجود المنتجات
     let products = getItem('products', []);
@@ -101,6 +302,13 @@ function initData() {
         ];
         setItem('products', products);
         console.log('تم إنشاء المنتجات');
+    }
+    
+    // التحقق من وجود الطلبات
+    let orders = getItem('orders', []);
+    if (orders.length === 0) {
+        setItem('orders', []);
+        console.log('تم إنشاء قائمة الطلبات');
     }
     
     // التحقق من وجود العروض
@@ -158,6 +366,9 @@ async function login(email, password) {
         // تحديث السلة بعد تسجيل الدخول
         migrateCart();
         
+        // طلب إذن الإشعارات
+        requestNotificationPermission();
+        
         return { success: true, user: sessionUser };
         
     } catch (error) {
@@ -177,6 +388,7 @@ async function login(email, password) {
             };
             sessionStorage.setItem('giftstar_user', JSON.stringify(sessionUser));
             migrateCart();
+            requestNotificationPermission();
             return { success: true, user: sessionUser };
         }
         
@@ -329,7 +541,7 @@ function migrateCart() {
 }
 
 // =========================================
-// نظام الطلبات مع Firebase (الأهم هنا!)
+// نظام الطلبات مع Firebase والإشعارات
 // =========================================
 async function createOrder(orderData) {
     try {
@@ -370,6 +582,9 @@ async function createOrder(orderData) {
         localStorage.setItem('giftstar_last_order', JSON.stringify(order));
         sessionStorage.setItem('giftstar_last_order', JSON.stringify(order));
         
+        // إرسال إشعار للمدير
+        await sendAdminNotification(order);
+        
         clearCart();
         
         window.dispatchEvent(new CustomEvent('orderCreated', { detail: order }));
@@ -407,6 +622,9 @@ async function createOrder(orderData) {
         
         localStorage.setItem('giftstar_last_order', JSON.stringify(order));
         sessionStorage.setItem('giftstar_last_order', JSON.stringify(order));
+        
+        // إرسال إشعار للمدير (محلي)
+        sendAdminNotification(order);
         
         clearCart();
         
@@ -489,17 +707,21 @@ async function updateOrderStatus(orderId, newStatus, note = '') {
         const q = query(collection(db, "orders"), where("id", "==", orderId));
         const querySnapshot = await getDocs(q);
         
+        let order = null;
+        
         if (!querySnapshot.empty) {
             const docRef = querySnapshot.docs[0].ref;
             await updateDoc(docRef, {
                 status: newStatus,
                 lastUpdate: new Date().toISOString(),
-                statusHistory: firebase.firestore.FieldValue.arrayUnion({
+                statusHistory: arrayUnion({
                     status: newStatus,
                     date: new Date().toISOString(),
                     note: note || `تم تحديث الحالة إلى ${newStatus}`
                 })
             });
+            
+            order = querySnapshot.docs[0].data();
         }
         
         // تحديث في localStorage
@@ -521,6 +743,12 @@ async function updateOrderStatus(orderId, newStatus, note = '') {
             });
             
             setItem('orders', orders);
+            order = orders[index];
+        }
+        
+        // إرسال إشعار للمستخدم
+        if (order) {
+            await sendUserNotification(order.userId, order, newStatus);
         }
         
         return true;
@@ -642,11 +870,20 @@ function initializeApp() {
     initData();
     updateHeader();
     
+    // إعداد مستمع الإشعارات
+    setupMessageListener();
+    
+    // طلب إذن الإشعارات إذا كان المستخدم مسجل الدخول
+    const user = getCurrentUser();
+    if (user) {
+        requestNotificationPermission();
+    }
+    
     window.addEventListener('storage', function(e) {
         if (e.key === 'giftstar_orders' || e.key === 'giftstar_last_order') {
             console.log('تم تحديث الطلبات من صفحة أخرى');
             if (window.location.pathname.includes('my-orders') || 
-                window.location.pathname.includes('receipt')) {
+                window.location.pathname.includes('admin')) {
                 location.reload();
             }
         }
@@ -727,7 +964,8 @@ window.giftstar = {
     getDashboardStats,
     formatKWD,
     showNotification,
-    updateHeader
+    updateHeader,
+    requestNotificationPermission
 };
 
 window.getCurrentUser = getCurrentUser;
@@ -743,6 +981,7 @@ window.getOrderById = getOrderById;
 window.formatKWD = formatKWD;
 window.showNotification = showNotification;
 window.updateHeader = updateHeader;
+window.requestNotificationPermission = requestNotificationPermission;
 
 // بدء التطبيق
 if (document.readyState === 'loading') {
