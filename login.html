@@ -203,272 +203,64 @@
   </div>
 </div>
 
+<script src="js/data.js"></script>
 <script>
-// =========================================
-// دوال التخزين المحلية
-// =========================================
-
-// حفظ البيانات
-function setItem(key, value) {
-    try {
-        localStorage.setItem('giftstar_' + key, JSON.stringify(value));
-        return true;
-    } catch (e) {
-        console.error('خطأ في الحفظ:', e);
-        return false;
-    }
-}
-
-// قراءة البيانات
-function getItem(key, fallback = null) {
-    try {
-        const data = localStorage.getItem('giftstar_' + key);
-        return data ? JSON.parse(data) : fallback;
-    } catch (e) {
-        console.error('خطأ في القراءة:', e);
-        return fallback;
-    }
-}
-
-// =========================================
-// إعادة تعيين النظام بالكامل
-// =========================================
-function resetSystem() {
-    console.log('بدء إعادة تعيين النظام...');
-    
-    // إنشاء حساب المدير
-    const adminUser = {
-        id: 1,
-        name: "مدير المتجر",
-        email: "admin@giftstar.kw",
-        password: "Admin@2024",
-        role: "admin",
-        verified: true,
-        createdAt: new Date().toISOString(),
-        phone: "51234567"
-    };
-    
-    // إنشاء مستخدم تجريبي
-    const testUser = {
-        id: 2,
-        name: "أحمد محمد",
-        email: "ahmed@test.com",
-        password: "12345678",
-        role: "customer",
-        verified: true,
-        createdAt: new Date().toISOString(),
-        phone: "51234568"
-    };
-    
-    // حفظ المستخدمين
-    const users = [adminUser, testUser];
-    setItem('users', users);
-    
-    // إنشاء منتجات تجريبية
-    const products = [
-        {
-            id: 1,
-            name: "كيك الفراولة الفاخر",
-            category: "cakes",
-            price: 12.500,
-            image: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&h=400&fit=crop",
-            description: "كيك فراولة طازجة بكريمة الشانتيه الفرنسية",
-            badge: "الأكثر مبيعاً",
-            featured: true,
-            stock: 20,
-            active: true
-        },
-        {
-            id: 2,
-            name: "باقة ورد حمراء",
-            category: "flowers",
-            price: 8.750,
-            image: "https://images.unsplash.com/photo-1518621736915-f3b1c41bfd00?w=400&h=400&fit=crop",
-            description: "24 وردة حمراء طازجة",
-            badge: "جديد",
-            featured: true,
-            stock: 30,
-            active: true
-        }
-    ];
-    setItem('products', products);
-    
-    // إنشاء طلبات فارغة
-    setItem('orders', []);
-    
-    // إنشاء عروض
-    const promos = [
-        {
-            id: 1,
-            title: "خصم 20% على جميع الكيك",
-            description: "عرض خاص لفترة محدودة",
-            image: "https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=600&h=300&fit=crop",
-            badge: "عرض",
-            active: true
-        }
-    ];
-    setItem('promos', promos);
-    
-    // عرض رسالة النجاح
-    const successBanner = document.getElementById('successBanner');
-    successBanner.style.display = 'block';
-    successBanner.textContent = '✅ تم إعادة تعيين النظام بنجاح! يمكنك تسجيل الدخول الآن';
-    
-    console.log('تم إعادة تعيين النظام');
-    console.log('المستخدمين:', users);
-}
-
-// =========================================
-// دالة تسجيل الدخول
-// =========================================
 function doLogin() {
-    console.log('بدء محاولة تسجيل الدخول...');
-    
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
     const banner = document.getElementById('msgBanner');
     const successBanner = document.getElementById('successBanner');
     const loginBtn = document.getElementById('loginBtn');
     
-    // إخفاء البانرات القديمة
     banner.style.display = 'none';
     successBanner.style.display = 'none';
     
-    // التحقق من المدخلات
     if (!email || !password) {
         banner.textContent = 'يرجى ملء جميع الحقول';
         banner.style.display = 'block';
         return;
     }
     
-    // تغيير نص الزر
-    const originalText = loginBtn.textContent;
     loginBtn.textContent = 'جاري تسجيل الدخول...';
     loginBtn.disabled = true;
     
-    try {
-        // قراءة المستخدمين
-        let users = getItem('users', []);
+    setTimeout(() => {
+        const result = window.login ? window.login(email, password) : null;
         
-        // إذا لا يوجد مستخدمين، قم بإنشائهم
-        if (users.length === 0) {
-            console.log('لا يوجد مستخدمين، سيتم إنشاؤهم');
-            resetSystem();
-            users = getItem('users', []);
-        }
-        
-        console.log('المستخدمين المتاحين:', users);
-        
-        // البحث عن المستخدم
-        const user = users.find(u => u.email === email);
-        console.log('المستخدم الموجود:', user);
-        
-        if (!user) {
-            banner.textContent = 'البريد الإلكتروني غير صحيح';
-            banner.style.display = 'block';
-            loginBtn.textContent = originalText;
-            loginBtn.disabled = false;
-            return;
-        }
-        
-        // التحقق من كلمة المرور
-        if (user.password !== password) {
-            console.log('كلمة المرور المخزنة:', user.password);
-            console.log('كلمة المرور المدخلة:', password);
-            banner.textContent = 'كلمة المرور غير صحيحة';
-            banner.style.display = 'block';
-            loginBtn.textContent = originalText;
-            loginBtn.disabled = false;
-            return;
-        }
-        
-        if (!user.verified) {
-            banner.textContent = 'الحساب غير مفعل';
-            banner.style.display = 'block';
-            loginBtn.textContent = originalText;
-            loginBtn.disabled = false;
-            return;
-        }
-        
-        // تسجيل الدخول ناجح
-        console.log('تم تسجيل الدخول بنجاح للمستخدم:', user);
-        
-        // حفظ الجلسة
-        const sessionUser = {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            phone: user.phone
-        };
-        
-        sessionStorage.setItem('giftstar_user', JSON.stringify(sessionUser));
-        
-        // عرض رسالة النجاح
-        successBanner.textContent = '✅ تم تسجيل الدخول بنجاح! جاري التحويل...';
-        successBanner.style.display = 'block';
-        
-        // التحويل
-        setTimeout(() => {
-            const redirect = sessionStorage.getItem('giftstar_redirect_after_login') || 
-                           (user.role === 'admin' ? 'admin/index.html' : 'index.html');
+        if (result && result.success) {
+            successBanner.textContent = '✅ تم تسجيل الدخول بنجاح! جاري التحويل...';
+            successBanner.style.display = 'block';
             
-            sessionStorage.removeItem('giftstar_redirect_after_login');
-            window.location.href = redirect;
-        }, 1000);
-        
-    } catch (error) {
-        console.error('خطأ:', error);
-        banner.textContent = 'حدث خطأ: ' + error.message;
-        banner.style.display = 'block';
-        loginBtn.textContent = originalText;
-        loginBtn.disabled = false;
-    }
-}
-
-// =========================================
-// التحقق من وجود رسالة في الرابط
-// =========================================
-const params = new URLSearchParams(window.location.search);
-if (params.get('msg') === 'login_required') {
-    const banner = document.getElementById('msgBanner');
-    banner.textContent = 'يرجى تسجيل الدخول أولاً';
-    banner.style.display = 'block';
-}
-
-// =========================================
-// التهيئة
-// =========================================
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('صفحة تسجيل الدخول جاهزة');
-    
-    // التحقق من وجود المستخدمين
-    const users = getItem('users', []);
-    if (users.length === 0) {
-        console.log('لا يوجد مستخدمين، سيتم إنشاؤهم تلقائياً');
-        resetSystem();
-    } else {
-        console.log('المستخدمين الموجودين:', users);
-    }
-    
-    // إضافة مستمع لزر Enter
-    document.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            doLogin();
+            setTimeout(() => {
+                const redirect = sessionStorage.getItem('giftstar_redirect_after_login') || 
+                               (result.user.role === 'admin' ? 'admin/index.html' : 'index.html');
+                sessionStorage.removeItem('giftstar_redirect_after_login');
+                window.location.href = redirect;
+            }, 1000);
+        } else {
+            banner.textContent = result ? result.error : 'فشل تسجيل الدخول';
+            banner.style.display = 'block';
+            loginBtn.textContent = 'دخول';
+            loginBtn.disabled = false;
         }
-    });
-});
+    }, 500);
+}
 
-// دوال للتصحيح في الكونسول
-window.checkUsers = function() {
-    console.log('المستخدمين:', getItem('users', []));
-};
-
-window.clearAll = function() {
+function resetSystem() {
     localStorage.clear();
     sessionStorage.clear();
     location.reload();
-};
+}
+
+const params = new URLSearchParams(window.location.search);
+if (params.get('msg') === 'login_required') {
+    document.getElementById('msgBanner').textContent = 'يرجى تسجيل الدخول أولاً';
+    document.getElementById('msgBanner').style.display = 'block';
+}
+
+document.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') doLogin();
+});
 </script>
 </body>
 </html>
