@@ -14,7 +14,11 @@
       <span class="header-tagline">توصيل داخل الكويت فقط</span>
       <div class="header-links">
         <a href="cart.html" class="cart-link">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="9" cy="21" r="1"/>
+            <circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          </svg>
           <span class="cart-count" id="cartCount">0</span>
         </a>
         <a href="login.html" class="btn-login" id="loginBtn">تسجيل الدخول</a>
@@ -90,55 +94,90 @@
   </div>
 </footer>
 
+<div class="stars-bg"></div>
+
 <script src="js/data.js"></script>
-<script src="js/main.js"></script>
 <script>
 let allProducts = [];
 let filteredProducts = [];
 let currentCategory = 'all';
 
+// تهيئة الصفحة
 function init() {
-  updateHeader();
-  allProducts = getData('products', []).filter(p => p.active);
+  // تحديث الهيدر
+  if (typeof giftstar !== 'undefined' && giftstar.updateHeader) {
+    giftstar.updateHeader();
+  } else {
+    updateHeaderLocal();
+  }
   
+  // جلب المنتجات
+  if (typeof giftstar !== 'undefined' && giftstar.getProducts) {
+    allProducts = giftstar.getProducts({ active: true });
+  } else {
+    // Fallback
+    allProducts = getData('products', []).filter(p => p.active);
+  }
+  
+  console.log('Products loaded:', allProducts.length);
+  
+  // التحقق من وجود فلتر في الرابط
   const params = new URLSearchParams(window.location.search);
   const cat = params.get('cat');
   if (cat) {
     currentCategory = cat;
+    // تحديث الأزرار
     document.querySelectorAll('.filter-btn').forEach(b => {
-      b.classList.toggle('active', b.onclick.toString().includes(`'${cat}'`));
+      b.classList.remove('active');
+      if ((cat === 'cakes' && b.textContent.includes('كيك')) ||
+          (cat === 'flowers' && b.textContent.includes('ورد')) ||
+          (cat === 'gifts' && b.textContent.includes('هدايا')) ||
+          (cat === 'chocolate' && b.textContent.includes('شوكولاتة'))) {
+        b.classList.add('active');
+      }
     });
   }
   
+  // عرض المنتجات
   renderShopProducts();
 }
 
+// عرض المنتجات
 function renderShopProducts() {
   const grid = document.getElementById('productsGrid');
+  
+  // تصفية المنتجات حسب الفئة
   filteredProducts = currentCategory === 'all' 
     ? [...allProducts] 
     : allProducts.filter(p => p.category === currentCategory);
 
+  // تطبيق الترتيب
   const sort = document.getElementById('sortSelect').value;
-  if (sort === 'price-asc') filteredProducts.sort((a,b) => a.price - b.price);
-  if (sort === 'price-desc') filteredProducts.sort((a,b) => b.price - a.price);
+  if (sort === 'price-asc') {
+    filteredProducts.sort((a,b) => a.price - b.price);
+  } else if (sort === 'price-desc') {
+    filteredProducts.sort((a,b) => b.price - a.price);
+  }
 
-  document.getElementById('resultsCount').textContent = `${filteredProducts.length} منتج`;
+  // تحديث عدد النتائج
+  document.getElementById('resultsCount').textContent = `📦 ${filteredProducts.length} منتج`;
 
+  // إذا ما في منتجات
   if (!filteredProducts.length) {
-    grid.innerHTML = '<div class="loading">لا توجد منتجات في هذه الفئة</div>';
+    grid.innerHTML = '<div class="loading" style="grid-column:1/-1">لا توجد منتجات في هذه الفئة</div>';
     return;
   }
 
+  // عرض المنتجات
   grid.innerHTML = filteredProducts.map(p => `
     <div class="product-card" onclick="window.location.href='product.html?id=${p.id}'" style="cursor:pointer">
       ${p.badge ? `<span class="product-badge">${p.badge}</span>` : ''}
-      <img src="${p.image}" alt="${p.name}" class="product-img" onerror="this.src='https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=400&h=300&fit=crop'">
+      <img src="${p.image}" alt="${p.name}" class="product-img" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=400&h=300&fit=crop'">
       <div class="product-info">
         <h3 class="product-name">${p.name}</h3>
         <p class="product-desc">${p.description.substring(0,70)}...</p>
         <div class="product-footer">
-          <div class="product-price">${p.price.toFixed(3)} <span>د.ك</span></div>
+          <div class="product-price">${formatPrice(p.price)}</div>
           <button class="btn-add-cart" onclick="event.stopPropagation();handleAddToCart(${p.id}, this)">أضف للسلة</button>
         </div>
       </div>
@@ -146,6 +185,7 @@ function renderShopProducts() {
   `).join('');
 }
 
+// تصفية حسب الفئة
 function filterByCategory(cat, btn) {
   currentCategory = cat;
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -153,30 +193,38 @@ function filterByCategory(cat, btn) {
   renderShopProducts();
 }
 
-function sortProducts(val) { renderShopProducts(); }
+// ترتيب المنتجات
+function sortProducts(val) { 
+  renderShopProducts(); 
+}
 
+// تصفية حسب السعر
 function filterByPrice() {
   const min = parseFloat(document.getElementById('priceMin').value) || 0;
   const max = parseFloat(document.getElementById('priceMax').value) || Infinity;
+  
   filteredProducts = allProducts.filter(p => 
     (currentCategory === 'all' || p.category === currentCategory) &&
     p.price >= min && p.price <= max
   );
+  
   const grid = document.getElementById('productsGrid');
-  document.getElementById('resultsCount').textContent = `${filteredProducts.length} منتج`;
+  document.getElementById('resultsCount').textContent = `📦 ${filteredProducts.length} منتج`;
+  
   if (!filteredProducts.length) {
-    grid.innerHTML = '<div class="loading">لا توجد منتجات بهذا النطاق السعري</div>';
+    grid.innerHTML = '<div class="loading" style="grid-column:1/-1">لا توجد منتجات بهذا النطاق السعري</div>';
     return;
   }
+  
   grid.innerHTML = filteredProducts.map(p => `
     <div class="product-card" onclick="window.location.href='product.html?id=${p.id}'" style="cursor:pointer">
       ${p.badge ? `<span class="product-badge">${p.badge}</span>` : ''}
-      <img src="${p.image}" alt="${p.name}" class="product-img">
+      <img src="${p.image}" alt="${p.name}" class="product-img" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1549465220-1a8b9238cd48?w=400&h=300&fit=crop'">
       <div class="product-info">
         <h3 class="product-name">${p.name}</h3>
         <p class="product-desc">${p.description.substring(0,70)}...</p>
         <div class="product-footer">
-          <div class="product-price">${p.price.toFixed(3)} <span>د.ك</span></div>
+          <div class="product-price">${formatPrice(p.price)}</div>
           <button class="btn-add-cart" onclick="event.stopPropagation();handleAddToCart(${p.id}, this)">أضف للسلة</button>
         </div>
       </div>
@@ -184,7 +232,129 @@ function filterByPrice() {
   `).join('');
 }
 
-init();
+// إضافة للسلة
+function handleAddToCart(productId, btn) {
+  const user = giftstar ? giftstar.getCurrentUser() : getCurrentUser();
+  
+  if (!user) {
+    sessionStorage.setItem('giftstar_redirect_after_login', window.location.href);
+    window.location.href = 'login.html?msg=login_required';
+    return;
+  }
+  
+  if (giftstar && giftstar.addToCart) {
+    giftstar.addToCart(productId);
+  } else {
+    addToCart(productId);
+  }
+  
+  btn.textContent = '✓ تمت الإضافة';
+  btn.style.background = 'var(--success)';
+  
+  setTimeout(() => {
+    btn.textContent = 'أضف للسلة';
+    btn.style.background = '';
+  }, 1500);
+  
+  if (giftstar && giftstar.showNotification) {
+    giftstar.showNotification('تمت إضافة المنتج للسلة', 'success');
+  } else {
+    showNotification('تمت إضافة المنتج للسلة', 'success');
+  }
+}
+
+// تنسيق السعر
+function formatPrice(price) {
+  if (giftstar && giftstar.formatKWD) {
+    return giftstar.formatKWD(price);
+  }
+  return price.toFixed(3) + ' د.ك';
+}
+
+// دوال مساعدة محلية (فشل safe)
+function getData(key, fallback) {
+  try {
+    const v = localStorage.getItem('giftstar_' + key);
+    return v ? JSON.parse(v) : fallback;
+  } catch { return fallback; }
+}
+
+function getCurrentUser() {
+  try {
+    return JSON.parse(sessionStorage.getItem('giftstar_user'));
+  } catch { return null; }
+}
+
+function addToCart(productId, qty = 1) {
+  const products = getData('products', []);
+  const product = products.find(p => p.id === productId);
+  if (!product) return false;
+
+  let cart = getData('cart', []);
+  const existing = cart.find(i => i.id === productId);
+  
+  if (existing) {
+    existing.qty += qty;
+  } else {
+    cart.push({ 
+      id: productId, 
+      qty, 
+      name: product.name, 
+      price: product.price, 
+      image: product.image 
+    });
+  }
+  
+  localStorage.setItem('giftstar_cart', JSON.stringify(cart));
+  updateCartBadgeLocal();
+  return true;
+}
+
+function updateCartBadgeLocal() {
+  try {
+    const cart = JSON.parse(localStorage.getItem('giftstar_cart') || '[]');
+    const total = cart.reduce((s, i) => s + i.qty, 0);
+    document.querySelectorAll('.cart-count, #cartCount').forEach(el => {
+      if (el) el.textContent = total;
+    });
+  } catch (e) {
+    console.error('Error updating cart badge:', e);
+  }
+}
+
+function updateHeaderLocal() {
+  const user = getCurrentUser();
+  const loginBtn = document.getElementById('loginBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  
+  if (!loginBtn) return;
+  
+  if (user) {
+    loginBtn.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'inline-block';
+  } else {
+    loginBtn.style.display = 'inline-block';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+  }
+  
+  updateCartBadgeLocal();
+}
+
+function showNotification(msg, type) {
+  const el = document.createElement('div');
+  el.className = 'notification ' + (type || 'success');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+function logout() {
+  sessionStorage.removeItem('giftstar_user');
+  window.location.href = 'index.html';
+}
+
+// تشغيل التهيئة
+document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
