@@ -240,25 +240,35 @@
 
 <div class="stars-bg"></div>
 
-<script src="js/data.js"></script>
-<script>
-// =========================================
-// المتغيرات العامة
-// =========================================
+<!-- Firebase SDK -->
+<script type="importmap">
+  {
+    "imports": {
+      "firebase/app": "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js",
+      "firebase/firestore": "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js",
+      "firebase/auth": "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js"
+    }
+  }
+</script>
+
+<script type="module" src="js/data.js"></script>
+<script type="module">
+import { getCurrentUser, getCart, createOrder, formatKWD, logout as firebaseLogout, updateHeader } from './js/data.js';
+
 let selectedPayment = null;
 let paymentMethods = [];
 let appliedPromo = null;
 let orderTotal = 0;
-let currentOrder = null;
 
-// =========================================
 // تهيئة الصفحة
-// =========================================
-function init() {
+window.addEventListener('DOMContentLoaded', async () => {
   console.log('بدء تهيئة صفحة الدفع...');
   
+  // تحديث الهيدر
+  updateHeader();
+  
   // التحقق من تسجيل الدخول
-  const user = typeof giftstar !== 'undefined' ? giftstar.getCurrentUser() : getCurrentUser();
+  const user = getCurrentUser();
   
   if (!user) { 
     console.log('المستخدم غير مسجل الدخول');
@@ -268,7 +278,7 @@ function init() {
   }
 
   // التحقق من وجود منتجات في السلة
-  const cart = typeof giftstar !== 'undefined' ? giftstar.getCart() : getCart();
+  const cart = getCart();
   console.log('المنتجات في السلة:', cart);
   
   if (!cart || cart.length === 0) { 
@@ -283,119 +293,62 @@ function init() {
     nameInput.value = user.name;
   }
   
-  // تعبئة رقم الهاتف إذا كان موجوداً
-  const phoneInput = document.getElementById('delivPhone');
-  if (phoneInput && user.phone) {
-    phoneInput.value = user.phone;
-  }
-  
-  // تحديث عداد السلة
-  if (typeof giftstar !== 'undefined') {
-    giftstar.updateCartBadge();
-  } else {
-    updateCartBadge();
-  }
-  
   // حساب وعرض ملخص الطلب
   calculateOrderTotal();
   
   // تحميل طرق الدفع
   loadPaymentMethods();
-}
+});
 
-// =========================================
 // طرق الدفع
-// =========================================
 function loadPaymentMethods() {
-  console.log('جاري تحميل طرق الدفع...');
-  
   const paymentMethodsEl = document.getElementById('paymentMethods');
-  if (!paymentMethodsEl) {
-    console.error('عنصر طرق الدفع غير موجود');
-    return;
-  }
+  if (!paymentMethodsEl) return;
   
-  // محاولة جلب طرق الدفع من localStorage
-  try {
-    const savedMethods = localStorage.getItem('giftstar_payment_methods');
-    console.log('البيانات المحفوظة:', savedMethods);
-    
-    if (savedMethods) {
-      paymentMethods = JSON.parse(savedMethods);
-      console.log('طرق الدفع المحملة:', paymentMethods);
-    }
-  } catch (e) {
-    console.error('خطأ في قراءة طرق الدفع:', e);
-  }
-  
-  // إذا ما في طرق دفع محفوظة، استخدم الافتراضية
-  if (!paymentMethods || paymentMethods.length === 0) {
-    console.log('استخدام طرق الدفع الافتراضية');
-    paymentMethods = [
-      { id: 1, name: "بطاقة ائتمانية / مدين", description: "Visa, Mastercard", icon: "card", active: true },
-      { id: 3, name: "تحويل بنكي", description: "تحويل بنكي مباشر", icon: "bank", active: true },
-      { id: 4, name: "نقداً عند الاستلام", description: "الدفع عند الاستلام", icon: "cash", active: true }
-    ];
-    
-    // حفظ طرق الدفع الافتراضية
-    try {
-      localStorage.setItem('giftstar_payment_methods', JSON.stringify(paymentMethods));
-      console.log('تم حفظ طرق الدفع الافتراضية');
-    } catch (e) {
-      console.error('خطأ في حفظ طرق الدفع:', e);
-    }
-  }
-  
-  // تصفية الطرق النشطة فقط
-  paymentMethods = paymentMethods.filter(m => m.active !== false);
-  console.log('طرق الدفع بعد التصفية:', paymentMethods);
-  
-  // أيقونات طرق الدفع
+  paymentMethods = [
+    { id: 1, name: "بطاقة ائتمانية / مدين", description: "Visa, Mastercard", icon: "card", active: true },
+    { id: 3, name: "تحويل بنكي", description: "تحويل بنكي مباشر", icon: "bank", active: true },
+    { id: 4, name: "نقداً عند الاستلام", description: "الدفع عند الاستلام", icon: "cash", active: true }
+  ];
+
   const icons = {
     card: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`,
     bank: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 22V12M7 22V12M11 22V12M15 22V12M19 22V12M1 12l11-9 11 9"/></svg>`,
     cash: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`
   };
 
-  // عرض طرق الدفع
   let html = '';
   
   paymentMethods.forEach(m => {
     html += `
-      <div class="payment-method" onclick="selectPayment('${m.icon || 'cash'}', this, ${m.id})" id="pm_${m.id}" style="cursor: pointer; display: flex; align-items: center; gap: 15px; padding: 15px; border: 2px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; transition: var(--transition);">
+      <div class="payment-method" onclick="selectPayment('${m.icon}', this, ${m.id})" id="pm_${m.id}" style="cursor: pointer; display: flex; align-items: center; gap: 15px; padding: 15px; border: 2px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; transition: var(--transition);">
         <input type="radio" name="payment" value="${m.id}" style="width: 20px; height: 20px; accent-color: var(--primary);">
         <div class="payment-icon" style="color: var(--primary);">${icons[m.icon] || icons.cash}</div>
         <div class="payment-method-label" style="flex: 1;">
-          <strong style="display: block; color: var(--text);">${m.name || 'طريقة دفع'}</strong>
-          <span style="font-size: 13px; color: var(--text-muted);">${m.description || ''}</span>
+          <strong style="display: block; color: var(--text);">${m.name}</strong>
+          <span style="font-size: 13px; color: var(--text-muted);">${m.description}</span>
         </div>
       </div>
     `;
   });
 
   paymentMethodsEl.innerHTML = html;
-  console.log('تم عرض طرق الدفع');
 
   // اختيار أول طريقة دفع افتراضياً
   if (paymentMethods.length > 0) {
     const firstMethod = document.getElementById('pm_' + paymentMethods[0].id);
     if (firstMethod) {
       setTimeout(() => {
-        selectPayment(paymentMethods[0].icon || 'cash', firstMethod, paymentMethods[0].id);
+        selectPayment(paymentMethods[0].icon, firstMethod, paymentMethods[0].id);
       }, 100);
     }
   }
 }
 
-// =========================================
 // اختيار طريقة الدفع
-// =========================================
-function selectPayment(icon, element, id) {
-  console.log('تم اختيار طريقة الدفع:', id, icon);
-  
+window.selectPayment = (icon, element, id) => {
   selectedPayment = id;
   
-  // إزالة التحديد من جميع الطرق
   document.querySelectorAll('.payment-method').forEach(m => {
     m.classList.remove('selected');
     m.style.borderColor = 'var(--border)';
@@ -404,7 +357,6 @@ function selectPayment(icon, element, id) {
     if (radio) radio.checked = false;
   });
   
-  // تحديد الطريقة المختارة
   if (element) {
     element.classList.add('selected');
     element.style.borderColor = 'var(--primary)';
@@ -413,7 +365,6 @@ function selectPayment(icon, element, id) {
     if (radio) radio.checked = true;
   }
 
-  // إظهار النموذج المناسب
   const cardForm = document.getElementById('cardForm');
   const bankInfo = document.getElementById('bankInfo');
   const cashInfo = document.getElementById('cashInfo');
@@ -423,12 +374,10 @@ function selectPayment(icon, element, id) {
   if (cashInfo) cashInfo.style.display = icon === 'cash' ? 'block' : 'none';
 }
 
-// =========================================
 // حساب إجمالي الطلب
-// =========================================
 function calculateOrderTotal() {
   try {
-    const cart = typeof giftstar !== 'undefined' ? giftstar.getCart() : getCart();
+    const cart = getCart();
     const subtotal = cart.reduce((sum, item) => sum + ((item.price || 0) * (item.qty || 0)), 0);
     const delivery = subtotal > 15 ? 0 : 1.500;
     
@@ -439,7 +388,6 @@ function calculateOrderTotal() {
     
     orderTotal = subtotal + delivery - discount;
 
-    // عرض المنتجات
     const orderItemsEl = document.getElementById('orderItems');
     if (orderItemsEl) {
       if (cart.length === 0) {
@@ -463,106 +411,38 @@ function calculateOrderTotal() {
       }
     }
 
-    // تحديث الإجماليات
-    const subtotalEl = document.getElementById('chkSubtotal');
-    const deliveryEl = document.getElementById('chkDelivery');
-    const totalEl = document.getElementById('chkTotal');
-    const btnTotalEl = document.getElementById('btnTotal');
-    
-    if (subtotalEl) subtotalEl.textContent = formatKWD(subtotal);
-    if (deliveryEl) deliveryEl.textContent = delivery === 0 ? 'مجاني' : formatKWD(delivery);
-    if (totalEl) totalEl.textContent = formatKWD(orderTotal);
-    if (btnTotalEl) btnTotalEl.textContent = formatKWD(orderTotal);
+    document.getElementById('chkSubtotal').textContent = formatKWD(subtotal);
+    document.getElementById('chkDelivery').textContent = delivery === 0 ? 'مجاني' : formatKWD(delivery);
+    document.getElementById('chkTotal').textContent = formatKWD(orderTotal);
+    document.getElementById('btnTotal').textContent = formatKWD(orderTotal);
     
     const discountRow = document.getElementById('discountRow');
     const discountEl = document.getElementById('chkDiscount');
     
     if (discount > 0) {
-      if (discountRow) discountRow.style.display = 'flex';
-      if (discountEl) discountEl.textContent = '-' + formatKWD(discount);
+      discountRow.style.display = 'flex';
+      discountEl.textContent = '-' + formatKWD(discount);
     } else {
-      if (discountRow) discountRow.style.display = 'none';
+      discountRow.style.display = 'none';
     }
   } catch (e) {
     console.error('خطأ في حساب الإجمالي:', e);
   }
 }
 
-// =========================================
-// دوال السلة والمستخدم (fallback)
-// =========================================
-function getCurrentUser() {
-  try {
-    return JSON.parse(sessionStorage.getItem('giftstar_user'));
-  } catch {
-    return null;
-  }
-}
-
-function getCart() {
-  try {
-    const user = getCurrentUser();
-    if (user) {
-      const cart = localStorage.getItem('giftstar_cart_' + user.id);
-      return cart ? JSON.parse(cart) : [];
-    }
-    return JSON.parse(localStorage.getItem('giftstar_cart') || '[]');
-  } catch {
-    return [];
-  }
-}
-
-function updateCartBadge() {
-  try {
-    const cart = getCart();
-    const total = cart.reduce((sum, item) => sum + (item.qty || 0), 0);
-    document.querySelectorAll('.cart-count, #cartCount').forEach(el => {
-      if (el) el.textContent = total;
-    });
-  } catch (e) {
-    console.error('خطأ في تحديث عداد السلة:', e);
-  }
-}
-
-function clearCart() {
-  try {
-    const user = getCurrentUser();
-    if (user) {
-      localStorage.removeItem('giftstar_cart_' + user.id);
-    } else {
-      localStorage.removeItem('giftstar_cart');
-    }
-    updateCartBadge();
-  } catch (e) {
-    console.error('خطأ في تفريغ السلة:', e);
-  }
-}
-
-// =========================================
 // تنسيقات
-// =========================================
-function formatCard(input) {
+window.formatCard = (input) => {
   let v = input.value.replace(/\D/g, '').substring(0, 16);
   input.value = v.replace(/(.{4})/g, '$1 ').trim();
 }
 
-function formatExp(input) {
+window.formatExp = (input) => {
   let v = input.value.replace(/\D/g, '');
   if (v.length >= 2) v = v.substring(0, 2) + '/' + v.substring(2, 4);
   input.value = v;
 }
 
-function formatKWD(amount) {
-  try {
-    return Number(amount || 0).toFixed(3) + ' د.ك';
-  } catch {
-    return '0.000 د.ك';
-  }
-}
-
-// =========================================
 // التحقق من صحة البيانات
-// =========================================
 function validateForm() {
   const name = document.getElementById('delivName')?.value.trim();
   const phone = document.getElementById('delivPhone')?.value.trim();
@@ -597,25 +477,32 @@ function validateForm() {
   return true;
 }
 
-// =========================================
 // إشعارات
-// =========================================
 function showNotification(msg, type) {
-  if (typeof giftstar !== 'undefined' && giftstar.showNotification) {
-    giftstar.showNotification(msg, type);
-  } else {
-    const el = document.createElement('div');
-    el.className = 'notification ' + type;
-    el.textContent = msg;
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 3000);
-  }
+  const el = document.createElement('div');
+  el.className = 'notification ' + type;
+  el.textContent = msg;
+  el.style.cssText = `
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: ${type === 'success' ? '#5ec98a' : '#e05555'};
+    color: white;
+    padding: 12px 30px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    z-index: 10000;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    animation: slideDown 0.3s ease;
+  `;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
 }
 
-// =========================================
 // إتمام الطلب
-// =========================================
-function placeOrder() {
+window.placeOrder = () => {
   if (!validateForm()) return;
   
   const method = paymentMethods.find(m => m.id === selectedPayment);
@@ -628,29 +515,21 @@ function placeOrder() {
     `;
   }
   
-  const confirmModal = document.getElementById('confirmModal');
-  if (confirmModal) {
-    confirmModal.style.display = 'flex';
-  }
+  document.getElementById('confirmModal').style.display = 'flex';
 }
 
-function closeConfirmModal() {
-  const confirmModal = document.getElementById('confirmModal');
-  if (confirmModal) {
-    confirmModal.style.display = 'none';
-  }
+window.closeConfirmModal = () => {
+  document.getElementById('confirmModal').style.display = 'none';
 }
 
-function processOrder() {
+window.processOrder = async () => {
   closeConfirmModal();
   
   const btn = document.getElementById('placeOrderBtn');
-  const originalText = btn ? btn.innerHTML : '';
+  const originalText = btn.innerHTML;
   
-  if (btn) {
-    btn.innerHTML = '<span>جاري معالجة الطلب...</span>';
-    btn.disabled = true;
-  }
+  btn.innerHTML = '<span>جاري معالجة الطلب...</span>';
+  btn.disabled = true;
 
   try {
     const name = document.getElementById('delivName')?.value.trim() || '';
@@ -659,8 +538,8 @@ function processOrder() {
     const address = document.getElementById('delivAddress')?.value.trim() || '';
     const notes = document.getElementById('delivNotes')?.value.trim() || '';
     
-    const user = typeof giftstar !== 'undefined' ? giftstar.getCurrentUser() : getCurrentUser();
-    const cart = typeof giftstar !== 'undefined' ? giftstar.getCart() : getCart();
+    const user = getCurrentUser();
+    const cart = getCart();
     const subtotal = cart.reduce((sum, item) => sum + ((item.price || 0) * (item.qty || 0)), 0);
     const delivery = subtotal > 15 ? 0 : 1.500;
     const method = paymentMethods.find(m => m.id === selectedPayment);
@@ -673,80 +552,33 @@ function processOrder() {
       delivery: delivery,
       total: orderTotal,
       paymentMethod: method ? method.name : 'غير محدد',
-      paymentIcon: method ? method.icon : 'cash',
-      userEmail: user ? user.email : null
+      paymentIcon: method ? method.icon : 'cash'
     };
     
-    let order;
+    const result = await createOrder(orderData);
     
-    // استخدام giftstar إذا كان متاحاً
-    if (typeof giftstar !== 'undefined' && giftstar.createOrder) {
-      order = giftstar.createOrder(orderData);
-    } else {
-      // حفظ الطلب محلياً
-      const orders = JSON.parse(localStorage.getItem('giftstar_orders') || '[]');
-      order = {
-        id: 'GS' + Date.now() + '-' + Math.floor(Math.random() * 10000),
-        ...orderData,
-        userId: user ? user.id : null,
-        date: new Date().toLocaleDateString('ar-KW'),
-        time: new Date().toLocaleTimeString('ar-KW'),
-        status: 'new',
-        statusHistory: [{
-          status: 'new',
-          date: new Date().toISOString(),
-          note: 'تم استلام الطلب بنجاح'
-        }],
-        createdAt: new Date().toISOString()
-      };
+    if (result.success) {
+      console.log('✅ تم إنشاء الطلب بنجاح:', result.order);
       
-      orders.unshift(order);
-      localStorage.setItem('giftstar_orders', JSON.stringify(orders));
-    }
-    
-    console.log('تم إنشاء الطلب:', order);
-    
-    // حفظ نسخ احتياطية
-    localStorage.setItem('giftstar_last_order', JSON.stringify(order));
-    sessionStorage.setItem('giftstar_last_order', JSON.stringify(order));
-    
-    // تفريغ السلة
-    if (typeof giftstar !== 'undefined' && giftstar.clearCart) {
-      giftstar.clearCart();
+      // إظهار نافذة النجاح
+      document.getElementById('successModal').style.display = 'flex';
+      
+      showNotification('تم إتمام الطلب بنجاح', 'success');
     } else {
-      clearCart();
+      throw new Error(result.error);
     }
-    
-    // إظهار نافذة النجاح
-    const successModal = document.getElementById('successModal');
-    if (successModal) {
-      successModal.style.display = 'flex';
-    }
-    
-    // تحديث عداد السلة
-    if (typeof giftstar !== 'undefined' && giftstar.updateCartBadge) {
-      giftstar.updateCartBadge();
-    } else {
-      updateCartBadge();
-    }
-    
-    showNotification('تم إتمام الطلب بنجاح', 'success');
     
   } catch (error) {
-    console.error('خطأ في إتمام الطلب:', error);
+    console.error('❌ خطأ في إتمام الطلب:', error);
     showNotification('حدث خطأ أثناء إتمام الطلب', 'error');
     
-    if (btn) {
-      btn.innerHTML = originalText;
-      btn.disabled = false;
-    }
+    btn.innerHTML = originalText;
+    btn.disabled = false;
   }
 }
 
-// =========================================
 // كود الخصم
-// =========================================
-function applyPromo() {
+window.applyPromo = () => {
   const code = document.getElementById('promoCode')?.value.trim() || '';
   
   if (code === 'GIFT10' || code === 'STAR20' || code === 'WELCOME15') {
@@ -758,22 +590,10 @@ function applyPromo() {
   }
 }
 
-// =========================================
 // تسجيل الخروج
-// =========================================
-function logout() {
-  if (typeof giftstar !== 'undefined' && giftstar.logout) {
-    giftstar.logout();
-  } else {
-    sessionStorage.removeItem('giftstar_user');
-    window.location.href = 'index.html';
-  }
+window.logout = () => {
+  firebaseLogout();
 }
-
-// =========================================
-// بدء التطبيق
-// =========================================
-document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
