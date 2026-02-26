@@ -1,370 +1,0 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>إتمام الطلب - Flavus </title>
-  <link rel="stylesheet" href="style.css">
-  <style>
-    /* تنسيق إضافي للتحويل */
-    .redirect-message {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-top: 16px;
-      animation: pulse 2s infinite;
-    }
-    
-    @keyframes pulse {
-      0% { opacity: 0.6; }
-      50% { opacity: 1; }
-      100% { opacity: 0.6; }
-    }
-    
-    .progress-bar {
-      width: 100%;
-      height: 4px;
-      background: var(--dark-3);
-      border-radius: 2px;
-      margin-top: 20px;
-      overflow: hidden;
-    }
-    
-    .progress-fill {
-      height: 100%;
-      width: 0%;
-      background: var(--orange);
-      transition: width 5s linear;
-    }
-  </style>
-</head>
-<body>
-
-<header>
-  <div class="header-inner">
-    <a href="index.html" class="logo">Flavus <span></span></a>
-    <nav>
-      <a href="index.html">الرئيسية</a>
-      <a href="products.html">المنتجات</a>
-    </nav>
-    <div class="header-actions">
-      <a href="cart.html" class="btn-cart">
-        🛒 السلة
-        <span class="cart-badge cart-count" style="display:none">0</span>
-      </a>
-    </div>
-    <button class="burger"><span></span><span></span><span></span></button>
-  </div>
-</header>
-
-<div class="page-header">
-  <div class="container">
-    <div class="section-label">الدفع</div>
-    <h1>إتمام <em style="font-style:italic;color:var(--orange)">الطلب</em> 🇰🇼</h1>
-    <p>دفع عند الاستلام - لا يتطلب أي بيانات بنكية - التوصيل لجميع محافظات الكويت</p>
-  </div>
-</div>
-
-<!-- STEPS -->
-<div style="background:var(--dark-2);border-bottom:1px solid var(--border-subtle)">
-  <div class="container" style="padding-top:20px;padding-bottom:20px">
-    <div style="display:flex;align-items:center;justify-content:center;gap:0">
-      <div class="step active" style="display:flex;align-items:center;gap:8px;color:var(--orange);font-size:13px;font-weight:600">
-        <div style="width:28px;height:28px;border-radius:50%;background:var(--orange);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">1</div>
-        بيانات التوصيل
-      </div>
-      <div style="width:60px;height:1px;background:var(--border-subtle);margin:0 12px"></div>
-      <div style="display:flex;align-items:center;gap:8px;color:var(--text-muted);font-size:13px">
-        <div style="width:28px;height:28px;border-radius:50%;background:var(--dark-3);color:var(--text-muted);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">2</div>
-        مراجعة الطلب
-      </div>
-      <div style="width:60px;height:1px;background:var(--border-subtle);margin:0 12px"></div>
-      <div style="display:flex;align-items:center;gap:8px;color:var(--text-muted);font-size:13px">
-        <div style="width:28px;height:28px;border-radius:50%;background:var(--dark-3);color:var(--text-muted);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">3</div>
-        تأكيد الطلب
-      </div>
-    </div>
-  </div>
-</div>
-
-<section>
-  <div class="container">
-    <div class="checkout-layout">
-      <div>
-        <!-- Personal Info -->
-        <div class="form-section">
-          <h3>👤 معلومات الشخصية</h3>
-          <div class="form-grid">
-            <div class="form-group">
-              <label>الاسم الأول *</label>
-              <input type="text" class="form-input" id="first-name" placeholder="محمد" required>
-            </div>
-            <div class="form-group">
-              <label>اسم العائلة *</label>
-              <input type="text" class="form-input" id="last-name" placeholder="العتيبي" required>
-            </div>
-            <div class="form-group">
-              <label>رقم الجوال *</label>
-              <input type="tel" class="form-input" id="phone" placeholder="5xxxxxxx" required dir="ltr">
-              <small style="color:var(--text-muted);font-size:11px">أدخل الرقم بدون رمز الدولة (+965)</small>
-            </div>
-            <div class="form-group">
-              <label>البريد الإلكتروني</label>
-              <input type="email" class="form-input" id="email" placeholder="name@email.com" dir="ltr">
-            </div>
-          </div>
-        </div>
-
-        <!-- Address -->
-        <div class="form-section">
-          <h3>📍 عنوان التوصيل - الكويت</h3>
-          <div class="form-grid">
-            <div class="form-group">
-              <label>المحافظة *</label>
-              <select class="form-input" id="city" required>
-                <option value="">اختر المحافظة</option>
-                <option>مدينة الكويت</option>
-                <option>حولي</option>
-                <option>السالمية</option>
-                <option>الفروانية</option>
-                <option>الجهراء</option>
-                <option>الأحمدي</option>
-                <option>مبارك الكبير</option>
-                <option>القرين</option>
-                <option>الفحيحيل</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>المنطقة *</label>
-              <input type="text" class="form-input" id="district" placeholder="اسم المنطقة" required>
-            </div>
-            <div class="form-group form-full">
-              <label>الشارع والعنوان *</label>
-              <input type="text" class="form-input" id="street" placeholder="اسم الشارع، رقم المبنى، الشقة..." required>
-            </div>
-            <div class="form-group">
-              <label>الرمز البريدي</label>
-              <input type="text" class="form-input" id="postal" placeholder="مثال: 30000" dir="ltr">
-            </div>
-            <div class="form-group">
-              <label>وقت التوصيل المفضل</label>
-              <select class="form-input" id="delivery-time">
-                <option>أي وقت</option>
-                <option>الصباح (9ص - 12م)</option>
-                <option>الظهر (12م - 4م)</option>
-                <option>المساء (4م - 9م)</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <!-- Notes -->
-        <div class="form-section">
-          <h3>📝 ملاحظات إضافية</h3>
-          <div class="form-group">
-            <label>ملاحظات للمندوب (اختياري)</label>
-            <textarea class="form-input" id="notes" rows="4" placeholder="أي تعليمات خاصة للتوصيل أو تغليف الهدية..."></textarea>
-          </div>
-        </div>
-
-        <!-- Payment Method -->
-        <div class="form-section">
-          <h3>💳 طريقة الدفع</h3>
-          <div style="background:var(--orange-glow);border:2px solid var(--orange);border-radius:10px;padding:20px;display:flex;align-items:center;gap:16px">
-            <div style="font-size:32px">💵</div>
-            <div>
-              <h4 style="color:var(--orange);margin-bottom:4px">الدفع عند الاستلام</h4>
-              <p style="font-size:13px;color:var(--text-secondary)">ادفع نقداً (دينار كويتي) عند استلام طلبك في الكويت.</p>
-            </div>
-            <div style="margin-right:auto;background:var(--orange);color:white;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700">الطريقة الوحيدة</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Summary -->
-      <div class="cart-summary">
-        <h3 class="summary-title">ملخص طلبك</h3>
-        <div id="order-items" style="margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border-subtle)"></div>
-        <div class="summary-row">
-          <span>المجموع الفرعي</span>
-          <span id="summary-subtotal">0 د.ك</span>
-        </div>
-        <div class="summary-row">
-          <span>الشحن</span>
-          <span id="summary-shipping">مجاني</span>
-        </div>
-        <div class="summary-row">
-          <span>الضريبة (0%)</span>
-          <span id="summary-tax">0 د.ك</span>
-        </div>
-        <div class="summary-row total">
-          <span>الإجمالي</span>
-          <span id="summary-total">0 د.ك</span>
-        </div>
-
-        <div class="cod-notice">
-          <div class="cod-icon">🇰🇼</div>
-          <div>ادفع نقداً (دينار كويتي) للمندوب عند الاستلام في الكويت. الخدمة مضمونة وآمنة.</div>
-        </div>
-
-        <button class="btn-primary" style="width:100%;justify-content:center;font-size:15px;padding:18px" onclick="placeOrder()">
-          ✅ تأكيد الطلب
-        </button>
-        <p style="font-size:11px;color:var(--text-muted);text-align:center;margin-top:12px">
-          بالضغط على تأكيد الطلب، أنت توافق على الشروط والأحكام
-        </p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- SUCCESS MODAL -->
-<div class="modal-overlay" id="success-modal">
-  <div class="modal" style="text-align:center;padding:60px 40px;max-width:500px">
-    <div style="font-size:64px;margin-bottom:20px">🇰🇼🎉</div>
-    <h2 style="font-family:'Cormorant Garamond',serif;font-size:36px;margin-bottom:12px">تم استلام طلبك!</h2>
-    <p style="color:var(--text-secondary);margin-bottom:8px;font-size:18px">رقم طلبك: <strong style="color:var(--orange)" id="order-number"></strong></p>
-    <p style="color:var(--text-muted);font-size:14px;margin-bottom:32px">سيتواصل معك المندوب خلال 24 ساعة لتأكيد موعد التوصيل في الكويت</p>
-    
-    <div style="background:var(--orange-glow);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:32px;font-size:14px;color:var(--text-secondary)">
-      💵 الدفع عند الاستلام - ادفع للمندوب (دينار كويتي) عند استلام عطورك
-    </div>
-    
-    <!-- رسالة التحويل -->
-    <div class="redirect-message" id="redirect-message">
-      جاري تحويلك إلى صفحة تتبع الطلب...
-    </div>
-    
-    <!-- شريط التقدم -->
-    <div class="progress-bar">
-      <div class="progress-fill" id="progress-fill"></div>
-    </div>
-    
-    <!-- زر للتحويل المباشر (اختياري) -->
-    <a href="order-tracking.html" class="btn-outline" style="display:inline-block;margin-top:20px" id="manual-link">
-      الذهاب إلى تتبع الطلب الآن ←
-    </a>
-  </div>
-</div>
-
-<footer>
-  <div class="container">
-    <div class="footer-bottom">
-      <p class="footer-copy">© 2025 عطور الخبير - الكويت.</p>
-    </div>
-  </div>
-</footer>
-
-<script src="main.js"></script>
-<script>
-function renderOrderSummary() {
-  const el = document.getElementById('order-items');
-  if (!cart.length) { el.innerHTML = '<p style="color:var(--text-muted);text-align:center;font-size:13px">سلتك فارغة</p>'; return; }
-  
-  el.innerHTML = cart.map(item => `
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-      <img src="${item.img}" style="width:50px;height:50px;border-radius:6px;object-fit:cover" alt="${item.name}">
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:600">${item.name}</div>
-        <div style="font-size:11px;color:var(--text-muted)">${item.size} × ${item.qty}</div>
-      </div>
-      <div style="font-size:14px;font-weight:700;color:var(--orange)">${(item.price * item.qty).toFixed(3)} د.ك</div>
-    </div>
-  `).join('');
-
-  const subtotal = getCartTotal();
-  const shipping = subtotal >= 40 ? 0 : 2.500;
-  const tax = 0; // No tax in Kuwait
-  const total = subtotal + shipping + tax;
-  
-  document.getElementById('summary-subtotal').textContent = subtotal.toFixed(3) + ' د.ك';
-  document.getElementById('summary-shipping').textContent = shipping === 0 ? 'مجاني 🎉' : shipping.toFixed(3) + ' د.ك';
-  document.getElementById('summary-tax').textContent = '0 د.ك';
-  document.getElementById('summary-total').textContent = total.toFixed(3) + ' د.ك';
-}
-
-function placeOrder() {
-  const required = ['first-name', 'last-name', 'phone', 'city', 'district', 'street'];
-  const missing = required.filter(id => !document.getElementById(id).value.trim());
-  if (missing.length) {
-    showToast('يرجى ملء جميع الحقول المطلوبة', 'error');
-    document.getElementById(missing[0]).focus();
-    return;
-  }
-
-  if (!cart.length) { showToast('سلتك فارغة!', 'error'); return; }
-
-  const orderNum = 'KWT-' + Date.now().toString().slice(-6);
-  
-  // Save order
-  const orders = JSON.parse(localStorage.getItem('admin_orders') || '[]');
-  const subtotal = getCartTotal();
-  const shipping = subtotal >= 40 ? 0 : 2.500;
-  const total = subtotal + shipping;
-  
-  // حفظ الطلب في localStorage
-  const newOrder = {
-    id: orderNum,
-    customer: document.getElementById('first-name').value + ' ' + document.getElementById('last-name').value,
-    firstName: document.getElementById('first-name').value,
-    lastName: document.getElementById('last-name').value,
-    phone: '+965' + document.getElementById('phone').value,
-    email: document.getElementById('email').value,
-    city: document.getElementById('city').value,
-    district: document.getElementById('district').value,
-    street: document.getElementById('street').value,
-    postal: document.getElementById('postal').value,
-    deliveryTime: document.getElementById('delivery-time').value,
-    notes: document.getElementById('notes').value,
-    subtotal: subtotal.toFixed(3),
-    shipping: shipping.toFixed(3),
-    total: total.toFixed(3),
-    status: 'pending',
-    date: new Date().toISOString().split('T')[0],
-    items: cart.map(i => ({
-      name: i.name,
-      size: i.size,
-      qty: i.qty,
-      price: i.price
-    }))
-  };
-  
-  orders.unshift(newOrder);
-  localStorage.setItem('admin_orders', JSON.stringify(orders));
-  
-  // حفظ آخر طلب للمستخدم (لصفحة التتبع)
-  localStorage.setItem('last_order', JSON.stringify(newOrder));
-
-  // Clear cart
-  cart = [];
-  saveCart();
-
-  // Show success modal
-  document.getElementById('order-number').textContent = orderNum;
-  document.getElementById('success-modal').classList.add('open');
-  
-  // تشغيل شريط التقدم
-  const progressFill = document.getElementById('progress-fill');
-  progressFill.style.width = '100%';
-  
-  // تحويل المستخدم بعد 5 ثواني
-  setTimeout(() => {
-    window.location.href = 'order-tracking.html?order=' + orderNum;
-  }, 5000);
-  
-  // تحديث رسالة التحويل كل ثانية
-  let secondsLeft = 5;
-  const redirectMsg = document.getElementById('redirect-message');
-  const interval = setInterval(() => {
-    secondsLeft--;
-    if (secondsLeft > 0) {
-      redirectMsg.textContent = `جاري تحويلك إلى صفحة تتبع الطلب خلال ${secondsLeft} ثواني...`;
-    } else {
-      clearInterval(interval);
-    }
-  }, 1000);
-}
-
-renderOrderSummary();
-</script>
-</body>
-</html>
