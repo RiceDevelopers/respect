@@ -1,0 +1,9 @@
+{
+  "name": "rice-protect-netlify",
+  "version": "4.1.0",
+  "private": true,
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.1",
+    "@netlify/database": "^1.0.0"
+  }
+}
